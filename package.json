@@ -19,5 +19,6 @@
     "sinon": "~1.5.0"
   },
   "dependencies": {
+    "minimatch": "~0.2.9"
   }
 }

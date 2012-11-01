@@ -17,7 +17,7 @@ describe('fireworm', function(){
             'a_dir', 'a_dir/a_nested_dir'
         ])
         expect(w.knownFiles()).to.deep.equal([
-            'a_dir/one.txt', 'a_dir/a_nested_dir/two.txt'
+            'a_dir/one.txt', 'a_dir/three.txt', 'a_dir/a_nested_dir/two.txt'
         ])
     })
     it('watches dirs', function(){
@@ -53,6 +53,15 @@ describe('fireworm', function(){
                     }, 1000)
                 })
             }, 1000)
+        })
+    })
+    it('adds globs', function(done){
+        w.add('a_dir/*.txt')
+        w.on('ready', function(){
+            expect(w.watchedFiles()).to.deep.equal([
+                'a_dir/one.txt', 'a_dir/three.txt'
+            ])
+            done()
         })
     })
     

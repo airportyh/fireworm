@@ -1,7 +1,7 @@
 var fs = require('fs')
 var path = require('path')
 var EventEmitter = require('events').EventEmitter.prototype
-
+var minimatch = require('minimatch')
 
 /* Object Util Functions */
 
@@ -75,7 +75,7 @@ FW.add = function(pattern){
     this.pushTask()
     for (var file in this.files){
         with({file: file}){
-            if (file === pattern){
+            if (minimatch(file, pattern)){
                 this._watchedFiles[file] = fs.watch(file, function(){
                     self.onFileAccessed(file)
                 })
