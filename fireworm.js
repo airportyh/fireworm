@@ -1,7 +1,9 @@
 var fs = require('fs')
 var path = require('path')
 var EventEmitter = require('events').EventEmitter.prototype
+var matchesStart = require('./matches_start')
 var minimatch = require('minimatch')
+var Set = require('set')
 
 /* Object Util Functions */
 
@@ -33,6 +35,7 @@ FW.initialize = function(){
     this.files = {}
     this._watchedDirs = {}
     this._watchedFiles = {}
+    this.patterns = new Set
 }
 
 FW.pushTask = function(){
@@ -49,40 +52,74 @@ FW.popTask = function(){
     }
 }
 
-FW.crawl = function(thing){
+FW.crawl = function(thing, depth, options){
     var self = this
+    options = options || {}
+    if (options.maxDepth && depth > options.maxDepth) return
     this.pushTask()
     fs.stat(thing, function(err, stat){
-        if (!err && stat.isDirectory()){
-            self.dirs[thing] = stat
-            self.watchDir(thing)
-            fs.readdir(thing, function(err, files){
-                if (err) return
-                files.forEach(function(file){
-                    self.crawl(path.join(thing, file))
+        if (err){
+            self.popTask()
+            return
+        }
+        if (stat.isDirectory()){
+            var dir = thing
+            self.dirs[dir] = stat
+            if (self.needToWatchDir(dir)){
+                self.watchDir(dir)
+                fs.readdir(dir, function(err, files){
+                    if (err) return
+                    files.forEach(function(file){
+                        self.crawl(path.join(dir, file), depth + 1, options)
+                    })
+                    self.popTask()
                 })
+            }else{
                 self.popTask()
-            })
+            }
         }else if (stat.isFile()){
-            self.files[thing] = stat
+            var file = thing
+            if (options.notifyNewFiles && self.needToWatchFile(file) &&
+                 !self.files[file]){
+                self.emit('change', file)
+            }
+            self.files[file] = stat
+            if (self.needToWatchFile(file)){
+                if (!self._watchedFiles[file]){
+                    self._watchedFiles[file] = fs.watch(file, function(){
+                        self.onFileAccessed(file)
+                    })
+                }    
+            }
             self.popTask()
         }
     })
 }
 
+FW.needToWatchDir = function(dir){
+    dir = path.resolve(dir)
+    return this.patterns.get().reduce(function(curr, pattern){
+        pattern = path.resolve(pattern)
+        return curr || matchesStart(dir, pattern)
+    }, false)
+}
+
+FW.needToWatchFile = function(file){
+    file = path.resolve(file)
+    return this.patterns.get().reduce(function(curr, pattern){
+        pattern = path.resolve(pattern)
+        return curr || minimatch(file, pattern)
+    }, false)
+}
+
 FW.add = function(pattern){
     var self = this
+    this.patterns.add(pattern)
     this.pushTask()
-    for (var file in this.files){
-        with({file: file}){
-            if (minimatch(file, pattern)){
-                this._watchedFiles[file] = fs.watch(file, function(){
-                    self.onFileAccessed(file)
-                })
-            }
-        }
-    }
-    this.popTask()
+    process.nextTick(function(){
+        self.crawl('.', 0)
+        self.popTask()   
+    })
 }
 
 FW.clear = function(){
@@ -93,22 +130,46 @@ FW.clear = function(){
     this._watchedFiles = {}
 }
 
-FW.onFileAccessed = function(filename){
+FW.ifFileOutOfDate = function(filename, callback){
     var self = this
     var oldStat = this.files[filename]
     fs.stat(filename, function(err, stat){
-        var then = oldStat.mtime.getTime()
-        var now = stat.mtime.getTime()
-        if (then < now){
-            self.emit('change', filename)
-            self.files[filename] = stat
+        if (err){
+            if (oldStat) callback()
+                delete self.files[filename]
+        }else{
+            var then = oldStat.mtime.getTime()
+            var now = stat.mtime.getTime()
+            if (then < now){
+                callback()
+                self.files[filename] = stat
+            }
         }
     })
-    
+}
+
+FW.onFileAccessed = function(filename){
+    var self = this
+    this.ifFileOutOfDate(filename, function(){
+        self.emit('change', filename)  
+    })
+}
+
+FW.onDirAccessed = function(dir){
+    console.log('onDirAccessed ' + dir)
+    var self = this
+    process.nextTick(function(){
+        self.crawl(dir, 0, {notifyNewFiles: true})
+    })
 }
 
 FW.watchDir = function(dir){
-    this._watchedDirs[dir] = true
+    var self = this
+    if (!this._watchedDirs[dir]){
+        this._watchedDirs[dir] = fs.watch(dir, function(){
+            self.onDirAccessed(dir)
+        })
+    }
 }
 
 FW.watchedDirs = function(){
@@ -127,9 +188,8 @@ FW.knownFiles = function(){
     return Object.keys(this.files)
 }
 
-function fireworm(basedir){
+function fireworm(){
     var worm = makeNew(FW)
-    worm.crawl(basedir)
     return worm
 }
 
