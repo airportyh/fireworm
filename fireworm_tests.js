@@ -12,6 +12,7 @@ describe('fireworm', function(){
     afterEach(function(){
         w.clear()
     })
+
     context('watching a_dir/*.txt', function(){
         beforeEach(function(done){
             w.add('a_dir/*.txt')
@@ -52,6 +53,14 @@ describe('fireworm', function(){
                     }, 1000)
                 })
             }, 1000)
+        })
+    })
+    it('watches multiple files', function(done){
+        w.add('a_dir/one.txt', 'a_dir/three.txt')
+        w.once('ready', function(){
+            expect(w.watchedFiles()).to.deep.equal(
+                ['a_dir/three.txt', 'a_dir/one.txt'])
+            done()
         })
     })
     describe('file watching', function(){

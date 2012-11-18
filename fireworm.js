@@ -140,9 +140,11 @@ FW.needToWatchFile = function(file){
     }, false)
 }
 
-FW.add = function(pattern){
+FW.add = function(){
     var self = this
-    this.patterns.add(pattern)
+    for (var i = 0; i < arguments.length; i++){
+        this.patterns.add(arguments[i])
+    }
     this.pushTask()
     process.nextTick(function(){
         self.crawl('.', 0)
