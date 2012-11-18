@@ -58,7 +58,8 @@ describe('fireworm', function(){
         function cleanUp(done){
             async.series([                      function(next)
             { exec('rm a_dir/four.txt',         function(){ next() }) } , function(next)
-            { exec('rm -fr a_dir/another_dir',  function(){ next() }) }
+            { exec('rm -fr a_dir/another_dir',  function(){ next() }) } , function(next)
+            { exec('rm -fr b_dir',              function(){ next() }) }
             ], done)
         }
         afterEach(cleanUp)
