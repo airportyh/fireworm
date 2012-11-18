@@ -23,7 +23,8 @@ describe('fireworm', function(){
             ])
         })
         it('watches no files', function(){
-            expect(w.watchedFiles()).to.deep.equal(['a_dir/one.txt', 'a_dir/three.txt'])
+            expect(w.watchedFiles()).to.deep.equal(
+                ['a_dir/three.txt', 'a_dir/one.txt'])
         })
     })
     context('watching a_dir/one.txt', function(){
@@ -110,19 +111,21 @@ describe('fireworm', function(){
             })
         })
     })
-    it.only('watches dirs that are recreated', function(done){
-        w.add('a_dir/one.txt')
-        w.once('ready', function(){
-            exec('touch -m a_dir/one.txt')
-            w.once('change', function(filename){
-                exec('rm -rf a_dir', function(){
-                    //console.log('removed')
-                    exec('mkdir a_dir && touch -m a_dir/one.txt')
-                    w.once('change', function(filename){
-                        //console.log('changed')
-                        expect(filename).to.equal('a_dir/one.txt')
-                        done()
+    it('watches dirs that are recreated', function(done){
+        exec('mkdir b_dir', function(){
+            w.add('b_dir/one.txt')
+            w.once('ready', function(){
+                exec('touch -m b_dir/one.txt')
+                w.once('change', function(filename){
+                    exec('rm -rf b_dir', function(){
+                        exec('mkdir b_dir && touch -m b_dir/one.txt')
+                        w.once('change', function(filename){
+                            expect(filename).to.equal('b_dir/one.txt')
+                            done()
+                        })
+                        
                     })
+
                 })
             })
         })

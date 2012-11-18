@@ -4,7 +4,7 @@
   "description": "A crawling file watcher.",
   "main": "fireworm.js",
   "scripts": {
-    "test": "testem ci"
+    "test": "node_modules/.bin/mocha -R nyan *_tests.js"
   },
   "repository": "",
   "keywords": [

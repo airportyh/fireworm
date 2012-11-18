@@ -1,7 +1,11 @@
 {
+    "src_files": [
+        "*.js"
+    ],
     "launchers": {
         "Mocha": {
-            "command": "node_modules/.bin/mocha *_tests.js"
+            "command": "node_modules/.bin/mocha -R tap *_tests.js",
+            "protocol": "tap"
         }
     },
     "launch_in_dev": ["Mocha"],
