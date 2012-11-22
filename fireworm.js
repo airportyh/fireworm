@@ -28,6 +28,8 @@ function statcache(){
     return s
 }
 
+
+
 module.exports = fireworm
 function fireworm(){
 
@@ -203,24 +205,35 @@ function fireworm(){
     }
 
     fw.watchDir = function(dir, ino){
-        if (!fw._watchedDirs[ino]){
+        if (fw._watchedDirs[ino]) return
+        if (fw.hitEMFILE) return
+        try{
             fw._watchedDirs[ino] = {
                 path: dir
                 , watcher: fs.watch(dir, function(evt){
                     fw.onDirAccessed(evt, dir)
                 })
             }
+        }catch(e){
+            fw.hitEMFILE = true
+            fw.emit('EMFILE')
         }
+        
     }
 
     fw.watchFile = function(file, ino){
-        if (!fw._watchedFiles[ino]){
+        if (fw._watchedFiles[ino]) return
+        if (fw.hitEMFILE) return
+        try{
             fw._watchedFiles[ino] = {
                 path: file
                 , watcher: fs.watch(file, function(evt){
                     fw.onFileAccessed(evt, file)
                 })
             }
+        }catch(e){
+            fw.hitEMFILE = true
+            fw.emit('EMFILE')
         }
     }
 
