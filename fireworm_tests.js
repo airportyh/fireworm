@@ -115,6 +115,7 @@ describe('fireworm', function(){
                     exec('touch -m a_dir/one.txt')
                     w.once('change', function(filename){
                         expect(filename).to.equal('a_dir/one.txt')
+                        expect(w.watchedFiles()).to.deep.equal(['a_dir/one.txt'])
                         done()
                     })
                 })

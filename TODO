@@ -1,0 +1,6 @@
+Todo for fireworm
+
+* make sure it handles crappy fs that don't support fs.watch gracefully
+* handle emfile
+
+
