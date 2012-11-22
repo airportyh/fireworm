@@ -5,245 +5,220 @@ var matchesStart = require('./matches_start')
 var minimatch = require('minimatch')
 var Set = require('set')
 
-/* Object Util Functions */
+module.exports = fireworm
+function fireworm(){
 
-function augment(obj, properties){
-    for (var key in properties){
-        obj[key] = properties[key]
+    var fw = Object.create(EventEmitter)
+
+    fw.taskCount = 0
+    fw.dirs = {}
+    fw.files = {}
+    fw.inoStats = {}
+    fw._watchedDirs = {}
+    fw._watchedFiles = {}
+    fw.patterns = new Set
+
+    fw.pushTask = function(){
+        fw.taskCount++
     }
-}
 
-function clone(obj){
-    var retval = {}
-    augment(retval, obj)
-    return retval
-}
+    fw.popTask = function(){
+        fw.taskCount--
+        if (fw.taskCount === 0){
+            process.nextTick(function(){
+                fw.emit('ready')
+            })
+        }
+    }
 
-function makeNew(obj){
-    var retval = clone(obj)
-    if (retval.initialize) retval.initialize()
-    return retval
-}
+    fw.printInfo = function(){
+        console.log('_watchedDirs')
+        console.log(fw._watchedDirs)
+        console.log('_watchedFiles')
+        console.log(fw._watchedFiles)
+        console.log('dirs')
+        console.log(fw.dirs)
+        console.log('files')
+        console.log(fw.files)
+    }
 
-/* Begin Interesting Stuff */
+    fw.cleanUpIno = function(ino){
+        console.log('cleanUpIno ' + ino)
+        delete fw.inoStats[ino]
+        if (fw._watchedFiles[ino]){
+            fw._watchedFiles[ino].watcher.close()
+            delete fw._watchedFiles[ino]
+        }
+        if (fw._watchedDirs[ino]){
+            fw._watchedDirs[ino].watcher.close()
+            delete fw._watchedDirs[ino]
+        }
+    }
 
-var FW = clone(EventEmitter)
-
-FW.initialize = function(){
-    this.taskCount = 0
-    this.dirs = {}
-    this.files = {}
-    this.inoStats = {}
-    this._watchedDirs = {}
-    this._watchedFiles = {}
-    this.patterns = new Set
-}
-
-FW.pushTask = function(){
-    this.taskCount++
-}
-
-FW.popTask = function(){
-    var self = this
-    this.taskCount--
-    if (this.taskCount === 0){
-        process.nextTick(function(){
-            self.emit('ready')
+    fw.crawl = function(thing, depth, options){
+        options = options || {}
+        if (options.maxDepth && depth > options.maxDepth) return
+        fw.pushTask()
+        fs.stat(thing, function(err, stat){
+            if (err){
+                fw.popTask()
+                return
+            }
+            if (stat.isDirectory()){
+                var dir = thing
+                if (fw.dirs[dir] && fw.dirs[dir] !== stat.ino){
+                    fw.cleanUpIno(fw.dirs[dir])
+                }
+                fw.dirs[dir] = stat.ino
+                fw.inoStats[stat.ino] = stat
+                if (fw.needToWatchDir(dir)){
+                    fw.watchDir(dir, stat.ino)
+                    fs.readdir(dir, function(err, files){
+                        if (err) return
+                        files.forEach(function(file){
+                            fw.crawl(path.join(dir, file), depth + 1, options)
+                        })
+                        fw.popTask()
+                    })
+                }else{
+                    fw.popTask()
+                }
+            }else if (stat.isFile()){
+                var file = thing
+                console.log('stat ' + file)
+                if (options.notifyNewFiles && fw.needToWatchFile(file) &&
+                     !fw.files[file]){
+                    fw.emit('change', file)
+                }
+                if (fw.files[file] && fw.files[file] !== stat.ino){
+                    fw.cleanUpIno(fw.files[file])
+                }
+                fw.files[file] = stat.ino
+                fw.inoStats[stat.ino] = stat
+                if (fw.needToWatchFile(file)){
+                    fw.watchFile(file, stat.ino)    
+                }
+                fw.popTask()
+            }
         })
     }
-}
 
-FW.printInfo = function(){
-    console.log('_watchedDirs')
-    console.log(this._watchedDirs)
-    console.log('_watchedFiles')
-    console.log(this._watchedFiles)
-    console.log('dirs')
-    console.log(this.dirs)
-    console.log('files')
-    console.log(this.files)
-}
-
-FW.cleanUpIno = function(ino){
-    delete this.inoStats[ino]
-    if (this._watchedFiles[ino]){
-        this._watchedFiles[ino].watcher.close()
-        delete this._watchedFiles[ino]
+    fw.needToWatchDir = function(dir){
+        dir = path.resolve(dir)
+        return fw.patterns.get().reduce(function(curr, pattern){
+            pattern = path.resolve(pattern)
+            return curr || matchesStart(dir, pattern)
+        }, false)
     }
-    if (this._watchedDirs[ino]){
-        this._watchedDirs[ino].watcher.close()
-        delete this._watchedDirs[ino]
-    }
-}
 
-FW.crawl = function(thing, depth, options){
-    var self = this
-    options = options || {}
-    if (options.maxDepth && depth > options.maxDepth) return
-    this.pushTask()
-    fs.stat(thing, function(err, stat){
-        if (err){
-            self.popTask()
-            return
+    fw.needToWatchFile = function(file){
+        file = path.resolve(file)
+        return fw.patterns.get().reduce(function(curr, pattern){
+            pattern = path.resolve(pattern)
+            return curr || minimatch(file, pattern)
+        }, false)
+    }
+
+    fw.add = function(){
+        
+        for (var i = 0; i < arguments.length; i++){
+            fw.patterns.add(arguments[i])
         }
-        if (stat.isDirectory()){
-            var dir = thing
-            if (self.dirs[dir] !== stat.ino){
-                self.cleanUpIno(self.dirs[dir])
-            }
-            self.dirs[dir] = stat.ino
-            self.inoStats[stat.ino] = stat
-            if (self.needToWatchDir(dir)){
-                self.watchDir(dir, stat.ino)
-                fs.readdir(dir, function(err, files){
-                    if (err) return
-                    files.forEach(function(file){
-                        self.crawl(path.join(dir, file), depth + 1, options)
-                    })
-                    self.popTask()
-                })
+        fw.pushTask()
+        process.nextTick(function(){
+            fw.crawl('.', 0)
+            fw.popTask()
+        })
+    }
+
+    fw.clear = function(){
+        for (var file in fw.files){
+            var watcher = fw._watchedFiles[file]
+            if (watcher) watcher.close()
+        }
+        fw._watchedFiles = {}
+    }
+
+    fw.ifFileOutOfDate = function(filename, callback){
+        var oldStat = fw.inoStats[fw.files[filename]]
+        fs.stat(filename, function(err, stat){
+            if (err){
+                if (oldStat) callback()
+                    delete fw.files[filename]
             }else{
-                self.popTask()
+                var then = oldStat.mtime.getTime()
+                var now = stat.mtime.getTime()
+                if (then < now){
+                    callback()
+                    fw.files[filename] = stat.ino
+                    fw.inoStats[stat.ino] = stat
+                }
             }
-        }else if (stat.isFile()){
-            var file = thing
-            if (options.notifyNewFiles && self.needToWatchFile(file) &&
-                 !self.files[file]){
-                self.emit('change', file)
-            }
-            if (self.files[file] !== stat.ino){
-                self.cleanUpIno(self.files[file])
-            }
-            self.files[file] = stat.ino
-            self.inoStats[stat.ino] = stat
-            if (self.needToWatchFile(file)){
-                self.watchFile(file, stat.ino)    
-            }
-            self.popTask()
+        })
+    }
+
+    fw.onFileAccessed = function(evt, filename){
+        console.log('onFileAccesed ' + evt + ' ' + filename)
+        if (evt === 'rename'){
+            // it has been deleted, so re-crawl parent directory
+            fw.crawl(path.dirname(filename), 0)
         }
-    })
-}
-
-FW.needToWatchDir = function(dir){
-    dir = path.resolve(dir)
-    return this.patterns.get().reduce(function(curr, pattern){
-        pattern = path.resolve(pattern)
-        return curr || matchesStart(dir, pattern)
-    }, false)
-}
-
-FW.needToWatchFile = function(file){
-    file = path.resolve(file)
-    return this.patterns.get().reduce(function(curr, pattern){
-        pattern = path.resolve(pattern)
-        return curr || minimatch(file, pattern)
-    }, false)
-}
-
-FW.add = function(){
-    var self = this
-    for (var i = 0; i < arguments.length; i++){
-        this.patterns.add(arguments[i])
+        fw.ifFileOutOfDate(filename, function(){
+            fw.emit('change', filename)  
+        })
     }
-    this.pushTask()
-    process.nextTick(function(){
-        self.crawl('.', 0)
-        self.popTask()
-    })
-}
 
-FW.clear = function(){
-    for (var file in this.files){
-        var watcher = this._watchedFiles[file]
-        if (watcher) watcher.close()
+    fw.onDirAccessed = function(evt, dir){
+        process.nextTick(function(){
+            fw.crawl(dir, 0, {notifyNewFiles: true})
+        })
     }
-    this._watchedFiles = {}
-}
 
-FW.ifFileOutOfDate = function(filename, callback){
-    var self = this
-    var oldStat = this.inoStats[this.files[filename]]
-    fs.stat(filename, function(err, stat){
-        if (err){
-            if (oldStat) callback()
-                delete self.files[filename]
-        }else{
-            var then = oldStat.mtime.getTime()
-            var now = stat.mtime.getTime()
-            if (then < now){
-                callback()
-                self.files[filename] = stat.ino
-                self.inoStats[stat.ino] = stat
+    fw.watchDir = function(dir, ino){
+        if (!fw._watchedDirs[ino]){
+            fw._watchedDirs[ino] = {
+                path: dir
+                , watcher: fs.watch(dir, function(evt){
+                    fw.onDirAccessed(evt, dir)
+                })
             }
         }
-    })
-}
+    }
 
-FW.onFileAccessed = function(filename){
-    var self = this
-    this.ifFileOutOfDate(filename, function(){
-        self.emit('change', filename)  
-    })
-}
-
-FW.onDirAccessed = function(evt, dir){
-    var self = this
-    process.nextTick(function(){
-        self.crawl(dir, 0, {notifyNewFiles: true})
-    })
-}
-
-FW.watchDir = function(dir, ino){
-    var self = this
-    if (!this._watchedDirs[ino]){
-        this._watchedDirs[ino] = {
-            path: dir
-            , watcher: fs.watch(dir, function(evt){
-                self.onDirAccessed(evt, dir)
-            })
+    fw.watchFile = function(file, ino){
+        if (!fw._watchedFiles[ino]){
+            fw._watchedFiles[ino] = {
+                path: file
+                , watcher: fs.watch(file, function(evt){
+                    fw.onFileAccessed(evt, file)
+                })
+            }
         }
     }
-}
 
-FW.watchFile = function(file, ino){
-    var self = this
-    if (!this._watchedFiles[ino]){
-        this._watchedFiles[ino] = {
-            path: file
-            , watcher: fs.watch(file, function(){
-                self.onFileAccessed(file)
-            })
+    fw.watchedDirs = function(){
+        var dirs = []
+        for (var ino in fw._watchedDirs){
+            dirs.push(fw._watchedDirs[ino].path)
         }
+        return dirs
     }
-}
 
-FW.watchedDirs = function(){
-    var dirs = []
-    for (var ino in this._watchedDirs){
-        dirs.push(this._watchedDirs[ino].path)
+    fw.watchedFiles = function(){
+        var files = []
+        for (var ino in fw._watchedFiles){
+            files.push(fw._watchedFiles[ino].path)
+        }
+        return files
     }
-    return dirs
-}
 
-FW.watchedFiles = function(){
-    var files = []
-    for (var ino in this._watchedFiles){
-        files.push(this._watchedFiles[ino].path)
+    fw.knownDirs = function(){
+        return Object.keys(fw.dirs)
     }
-    return files
-}
 
-FW.knownDirs = function(){
-    return Object.keys(this.dirs)
-}
+    fw.knownFiles = function(){
+        return Object.keys(fw.files)
+    }
 
-FW.knownFiles = function(){
-    return Object.keys(this.files)
+    return fw
 }
-
-function fireworm(){
-    var worm = makeNew(FW)
-    return worm
-}
-
-module.exports = fireworm
