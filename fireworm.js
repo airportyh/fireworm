@@ -72,7 +72,11 @@ function fileInfoKeeper(){
 }
 
 
+/*
 
+fireworm is a file watcher - the sole export of this module.
+
+*/
 module.exports = fireworm
 function fireworm(){
 
