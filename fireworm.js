@@ -46,9 +46,9 @@ function fileInfoKeeper(){
             }
         }catch(e){
             if (e.message.match(/EMFILE/)){
-                s.emit('EMFILE')
+                s.emit('EMFILE', e.message)
             }else{
-                throw e
+                s.emit('fw-error', e.message)
             }
         }
     }
