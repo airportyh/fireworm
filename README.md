@@ -13,6 +13,7 @@ Usage
 
     var fireworm = require('fireworm')
 
+    // make a new file watcher
     var fw = fireworm()
 
     // Add the files you want to watch for changes on (can be glob)
