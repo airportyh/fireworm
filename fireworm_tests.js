@@ -25,7 +25,7 @@ describe('fireworm', function(){
         })
         it('watches no files', function(){
             expect(w.watchedFiles()).to.deep.equal(
-                ['a_dir/three.txt', 'a_dir/one.txt'])
+                ['a_dir/one.txt', 'a_dir/three.txt'])
         })
     })
     context('watching a_dir/one.txt', function(){
@@ -59,7 +59,7 @@ describe('fireworm', function(){
         w.add('a_dir/one.txt', 'a_dir/three.txt')
         w.once('ready', function(){
             expect(w.watchedFiles()).to.deep.equal(
-                ['a_dir/three.txt', 'a_dir/one.txt'])
+                ['a_dir/one.txt', 'a_dir/three.txt'])
             done()
         })
     })

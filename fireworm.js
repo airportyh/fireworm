@@ -5,26 +5,69 @@ var matchesStart = require('./matches_start')
 var minimatch = require('minimatch')
 var Set = require('set')
 
+/* 
 
-function statcache(){
+A file info keeper keeps the stat objects and watcher object for a collection of files (or directories).
+
+`stats` and `watchers` are a dictionary key'ed by ino. `inos` is a dictionary key'ed by file path.
+
+*/
+function fileInfoKeeper(){
     var s = {}
-    s.stats = {}
-    s.inos = {}
+
+    s.init = function(){
+        s.stats = {}
+        s.inos = {}
+        s.watchers = {}
+    }
+    s.init()
+
     s.save = function(path, stat){
         s.inos[path] = stat.ino
         s.stats[stat.ino] = stat
     }
+
     s.remove = function(path){
         var ino = s.inos[path]
         delete s.stats[ino]
         delete s.inos[path]
+        s.unwatch(ino)
     }
+
+    s.watch = function(path, onAccessed){
+        var ino = s.inos[path]
+        if (s.watchers[ino]) return
+        s.watchers[ino] = {
+            path: path
+            , watcher: fs.watch(path, function(evt){
+                onAccessed(evt, path)
+            })
+        }
+    }
+
+    s.unwatch = function(ino){
+        var info = s.watchers[ino]
+        if (info){
+            info.watcher.close()
+            delete s.watchers[ino]
+        }
+    }
+
+    s.clear = function(){
+        for (var ino in s.watchers){
+            s.watchers[ino].watcher.close()
+        }
+        s.init()
+    }
+
     s.get = function(path){
         return s.stats[s.inos[path]]
     }
+
     s.knownPaths = function(){
         return Object.keys(s.inos)
     }
+
     return s
 }
 
@@ -35,16 +78,13 @@ function fireworm(){
 
     var fw = Object.create(EventEmitter)
 
-    function init(){
+    fw.init = function(){
         fw.taskCount = 0
-        fw.dirs = statcache()
-        fw.files = statcache()
-        fw._watchedDirs = {}
-        fw._watchedFiles = {}
+        fw.dirs = fileInfoKeeper()
+        fw.files = fileInfoKeeper()
         fw.patterns = new Set
     }
-
-    init()
+    fw.init()
 
     fw.pushTask = function(){
         fw.taskCount++
@@ -60,37 +100,16 @@ function fireworm(){
     }
 
     fw.printInfo = function(){
-        console.log('_watchedDirs')
-        console.log(fw._watchedDirs)
-        console.log('_watchedFiles')
-        console.log(fw._watchedFiles)
         console.log('dirs')
         console.log(fw.dirs)
         console.log('files')
         console.log(fw.files)
     }
 
-    fw.cleanUpIno = function(ino){
-        if (fw._watchedFiles[ino]){
-            fw._watchedFiles[ino].watcher.close()
-            delete fw._watchedFiles[ino]
-        }
-        if (fw._watchedDirs[ino]){
-            fw._watchedDirs[ino].watcher.close()
-            delete fw._watchedDirs[ino]
-        }
-    }
-
     fw.clear = function(){
-        for (var file in fw._watchedFiles){
-            fw._watchedFiles[file].watcher.close()
-            delete fw._watchedFiles[file]
-        }
-        for (var dir in fw._watchedDirs){
-            fw._watchedDirs[dir].watcher.close()
-            delete fw._watchedDirs[dir]
-        }
-        init()
+        fw.files.clear()
+        fw.dirs.clear()
+        fw.init()
     }
 
     fw.crawl = function(thing, depth, options){
@@ -119,8 +138,8 @@ function fireworm(){
         if (ino !== stat.ino){
             fw.dirs.remove(dir)
         }
-        fw.watchDir(dir, stat.ino)
         fw.dirs.save(dir, stat)
+        fw.dirs.watch(dir, fw.onDirAccessed)
         fs.readdir(dir, function(err, files){
             if (err) return
             files.forEach(function(file){
@@ -131,12 +150,12 @@ function fireworm(){
     }
 
     fw.crawlFile = function(file, stat, options){
-        fw.watchFile(file, stat.ino)    
         var isNewFile = !fw.files.get(file)
+        fw.files.save(file, stat)
+        fw.files.watch(file, fw.onFileAccessed)
         if (options.notifyNewFiles && isNewFile){
             fw.emit('change', file)
         }
-        fw.files.save(file, stat)
     }
 
     fw.needToWatchDir = function(dir){
@@ -170,7 +189,6 @@ function fireworm(){
         var oldStat = fw.files.get(filename)
         fs.stat(filename, function(err, stat){
             if (err){
-                if (oldStat) fw.cleanUpIno(oldStat.ino)
                 fw.files.remove(filename)
                 if (oldStat) callback(true)
             }else{
@@ -204,53 +222,12 @@ function fireworm(){
         })
     }
 
-    fw.watchDir = function(dir, ino){
-        if (fw._watchedDirs[ino]) return
-        if (fw.hitEMFILE) return
-        try{
-            fw._watchedDirs[ino] = {
-                path: dir
-                , watcher: fs.watch(dir, function(evt){
-                    fw.onDirAccessed(evt, dir)
-                })
-            }
-        }catch(e){
-            fw.hitEMFILE = true
-            fw.emit('EMFILE')
-        }
-        
-    }
-
-    fw.watchFile = function(file, ino){
-        if (fw._watchedFiles[ino]) return
-        if (fw.hitEMFILE) return
-        try{
-            fw._watchedFiles[ino] = {
-                path: file
-                , watcher: fs.watch(file, function(evt){
-                    fw.onFileAccessed(evt, file)
-                })
-            }
-        }catch(e){
-            fw.hitEMFILE = true
-            fw.emit('EMFILE')
-        }
-    }
-
     fw.watchedDirs = function(){
-        var dirs = []
-        for (var ino in fw._watchedDirs){
-            dirs.push(fw._watchedDirs[ino].path)
-        }
-        return dirs
+        return fw.dirs.knownPaths()
     }
 
     fw.watchedFiles = function(){
-        var files = []
-        for (var ino in fw._watchedFiles){
-            files.push(fw._watchedFiles[ino].path)
-        }
-        return files
+        return fw.files.knownPaths()
     }
 
     fw.knownDirs = function(){
