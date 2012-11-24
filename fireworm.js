@@ -47,6 +47,8 @@ function fileInfoKeeper(){
         }catch(e){
             if (e.message.match(/EMFILE/)){
                 s.emit('EMFILE')
+            }else{
+                throw e
             }
         }
     }
