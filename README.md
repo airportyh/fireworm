@@ -3,6 +3,11 @@ Fireworm
 
 Fireworm is a crawling file watcher.
 
+Install
+-------
+
+    npm install fireworm
+
 Usage
 -----
 
