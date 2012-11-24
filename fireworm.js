@@ -13,7 +13,7 @@ A file info keeper keeps the stat objects and watcher object for a collection of
 
 */
 function fileInfoKeeper(){
-    var s = {}
+    var s = Object.create(EventEmitter)
 
     s.init = function(){
         s.stats = {}
@@ -37,11 +37,17 @@ function fileInfoKeeper(){
     s.watch = function(path, onAccessed){
         var ino = s.inos[path]
         if (s.watchers[ino]) return
-        s.watchers[ino] = {
-            path: path
-            , watcher: fs.watch(path, function(evt){
-                onAccessed(evt, path)
-            })
+        try{
+            s.watchers[ino] = {
+                path: path
+                , watcher: fs.watch(path, function(evt){
+                    onAccessed(evt, path)
+                })
+            }
+        }catch(e){
+            if (e.message.match(/EMFILE/)){
+                s.emit('EMFILE')
+            }
         }
     }
 
@@ -118,6 +124,7 @@ function fireworm(){
 
     fw.crawl = function(thing, depth, options){
         options = options || {}
+        if (fw.hasEMFILE) return
         if (options.maxDepth && depth > options.maxDepth) return
         if (!fw.needToWatchDir(thing)) return
         fw.pushTask()
@@ -241,6 +248,14 @@ function fireworm(){
     fw.knownFiles = function(){
         return fw.files.knownPaths()
     }
+
+    fw.onEMFILE = function(){
+        fw.hasEMFILE = true
+        fw.emit('EMFILE')
+        fw.clear()
+    }
+    fw.dirs.on('EMFILE', fw.onEMFILE)
+    fw.files.on('EMFILE', fw.onEMFILE)
 
     return fw
 }
