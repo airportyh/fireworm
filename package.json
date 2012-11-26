@@ -21,6 +21,7 @@
   "dependencies": {
     "minimatch": "~0.2.9",
     "async": "~0.1.22",
-    "set": "~1.0.0"
+    "set": "~1.0.0",
+    "winston": "~0.6.2"
   }
 }

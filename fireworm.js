@@ -4,6 +4,7 @@ var EventEmitter = require('events').EventEmitter.prototype
 var matchesStart = require('./matches_start')
 var minimatch = require('minimatch')
 var Set = require('set')
+var log = require('winston')
 
 /* 
 
@@ -12,33 +13,33 @@ A file info keeper keeps the stat objects and watcher object for a collection of
 `stats` and `watchers` are a dictionary key'ed by ino. `inos` is a dictionary key'ed by file path.
 
 */
-function fileInfoKeeper(){
-    var s = Object.create(EventEmitter)
+function fileinfoKeeper(){
+    var fk = Object.create(EventEmitter)
 
-    s.init = function(){
-        s.stats = {}
-        s.inos = {}
-        s.watchers = {}
+    fk.init = function(){
+        fk.stats = {}
+        fk.inos = {}
+        fk.watchers = {}
     }
-    s.init()
+    fk.init()
 
-    s.save = function(path, stat){
-        s.inos[path] = stat.ino
-        s.stats[stat.ino] = stat
-    }
-
-    s.remove = function(path){
-        var ino = s.inos[path]
-        delete s.stats[ino]
-        delete s.inos[path]
-        s.unwatch(ino)
+    fk.save = function(path, stat){
+        fk.inos[path] = stat.ino
+        fk.stats[stat.ino] = stat
     }
 
-    s.watch = function(path, onAccessed){
-        var ino = s.inos[path]
-        if (s.watchers[ino]) return
+    fk.remove = function(path){
+        var ino = fk.inos[path]
+        delete fk.stats[ino]
+        delete fk.inos[path]
+        fk.unwatch(ino)
+    }
+
+    fk.watch = function(path, onAccessed){
+        var ino = fk.inos[path]
+        if (fk.watchers[ino]) return
         try{
-            s.watchers[ino] = {
+            fk.watchers[ino] = {
                 path: path
                 , watcher: fs.watch(path, function(evt){
                     onAccessed(evt, path)
@@ -46,37 +47,37 @@ function fileInfoKeeper(){
             }
         }catch(e){
             if (e.message.match(/EMFILE/)){
-                s.emit('EMFILE', e.message)
+                fk.emit('EMFILE', e.message)
             }else{
-                s.emit('fw-error', e.message)
+                fk.emit('fw-error', e.message)
             }
         }
     }
 
-    s.unwatch = function(ino){
-        var info = s.watchers[ino]
+    fk.unwatch = function(ino){
+        var info = fk.watchers[ino]
         if (info){
             info.watcher.close()
-            delete s.watchers[ino]
+            delete fk.watchers[ino]
         }
     }
 
-    s.clear = function(){
-        for (var ino in s.watchers){
-            s.watchers[ino].watcher.close()
+    fk.clear = function(){
+        for (var ino in fk.watchers){
+            fk.watchers[ino].watcher.close()
         }
-        s.init()
+        fk.init()
     }
 
-    s.get = function(path){
-        return s.stats[s.inos[path]]
+    fk.get = function(path){
+        return fk.stats[fk.inos[path]]
     }
 
-    s.knownPaths = function(){
-        return Object.keys(s.inos)
+    fk.knownPaths = function(){
+        return Object.keys(fk.inos)
     }
 
-    return s
+    return fk
 }
 
 
@@ -92,8 +93,8 @@ function fireworm(){
 
     fw.init = function(){
         fw.taskCount = 0
-        fw.dirs = fileInfoKeeper()
-        fw.files = fileInfoKeeper()
+        fw.dirs = fileinfoKeeper()
+        fw.files = fileinfoKeeper()
         fw.patterns = new Set
     }
     fw.init()
@@ -188,6 +189,7 @@ function fireworm(){
     }
 
     fw.add = function(){
+        log.info('fireworm: add ' + Array.prototype.slice.apply(arguments).join(' '))
         for (var i = 0; i < arguments.length; i++){
             fw.patterns.add(arguments[i])
         }
