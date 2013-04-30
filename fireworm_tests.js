@@ -3,6 +3,7 @@ var expect = require('chai').expect
 var exec = require('child_process').exec
 var sinon = require('sinon')
 var async = require('async')
+var Set = require('set')
 
 describe('fireworm', function(){
     var w
@@ -139,6 +140,21 @@ describe('fireworm', function(){
 
                 })
             })
+        })
+    })
+    describe('isTracked', function(){
+        it('should be ok if already tracked', function(){
+            w.trackedDirs = new Set(['.'])
+            expect(w.isTracked('.')).to.be.ok
+        })
+        it('should not be ok if not tracked', function(){
+            w.trackedDirs = new Set(['abc'])
+            expect(w.isTracked('.')).not.to.be.ok
+        })
+        it('should be ok if subdir of a tracked dir', function(){
+            w.trackedDirs = new Set(['abc'])
+            expect(w.isTracked('abc/def')).to.be.ok
+            expect(w.isTracked('abcd/def')).not.to.be.ok
         })
     })
 })

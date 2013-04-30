@@ -6,6 +6,9 @@ var minimatch = require('minimatch')
 var Set = require('set')
 var log = require('winston')
 
+log.remove(log.transports.Console)
+log.add(log.transports.File, {filename: 'fireworm.log'})
+
 /* 
 
 A file info keeper keeps the stat objects and watcher object for a collection of files (or directories).
@@ -96,6 +99,7 @@ function fireworm(){
         fw.dirs = fileinfoKeeper()
         fw.files = fileinfoKeeper()
         fw.patterns = new Set
+        fw.trackedDirs = new Set
     }
     fw.init()
 
@@ -107,6 +111,7 @@ function fireworm(){
         fw.taskCount--
         if (fw.taskCount === 0){
             process.nextTick(function(){
+                log.info('emit ready')
                 fw.emit('ready')
             })
         }
@@ -126,28 +131,42 @@ function fireworm(){
     }
 
     fw.crawl = function(thing, depth, options){
+        log.info('crawl ' + thing)
         options = options || {}
         if (fw.hasEMFILE) return
         if (options.maxDepth && depth > options.maxDepth) return
-        if (!fw.needToWatchDir(thing)) return
+        if (!fw.needToWatchDir(thing)){
+            log.info('crawl skipping ' + thing)
+            return
+        }
         fw.pushTask()
+        log.info('crawl here ' + thing)
         fs.stat(thing, function(err, stat){
-            if (err){
-                fw.popTask()
-                return
-            }
-            if (stat.isDirectory()){
-                fw.crawlDir(thing, stat, depth, options, function(){
+            try{
+                log.info('crawl stat')
+                if (err){
+                    log.info('stat err ' + err)
                     fw.popTask()
-                })
-            }else if (stat.isFile()){
-                fw.crawlFile(thing, stat, options)
-                fw.popTask()
+                    return
+                }
+                if (stat.isDirectory()){
+                    log.info('crawl is dir')
+                    fw.crawlDir(thing, stat, depth, options, function(){
+                        fw.popTask()
+                    })
+                }else if (stat.isFile()){
+                    fw.crawlFile(thing, stat, options)
+                    fw.popTask()
+                }
+            }catch(e){
+                log.info(e.message)
+                log.info(e.stack)
             }
         })
     }
 
     fw.crawlDir = function(dir, stat, depth, options, callback){
+        log.info('crawlDir ' + dir)
         var ino = fw.dirs.get(dir)
         if (ino !== stat.ino){
             fw.dirs.remove(dir)
@@ -164,8 +183,12 @@ function fireworm(){
     }
 
     fw.crawlFile = function(file, stat, options){
+        if (file.match(/tests.js$/)){
+            log.info('fireworm: crawl file ' + file)
+        }
         var isNewFile = !fw.files.get(file)
         fw.files.save(file, stat)
+        log.info('watch file ' + file)
         fw.files.watch(file, fw.onFileAccessed)
         if (options.notifyNewFiles && isNewFile){
             fw.emit('change', file)
@@ -188,16 +211,33 @@ function fireworm(){
         }, false)
     }
 
+    fw.isTracked = function(dir){
+        var fullPath = path.resolve(dir) + '/'
+        return fw.trackedDirs.get().reduce(function(tracked, watchedDir){
+            var watchedFullPath = path.resolve(watchedDir) + '/'
+            var contains = fullPath.substring(0, watchedFullPath.length) === watchedFullPath
+            return tracked || contains
+        }, false)
+    }
+
+    fw.trackDir = function(dir){
+        if (fw.isTracked(dir)) return
+        fw.trackedDirs.add(dir)
+        fw.pushTask()
+        process.nextTick(function(){
+            fw.crawl(dir, 0)
+            fw.popTask()
+        })
+    }
+
     fw.add = function(){
-        log.info('fireworm: add ' + Array.prototype.slice.apply(arguments).join(' '))
+        if (arguments[0] && arguments[0].match(/tests.js$/)){
+            log.info('fireworm: add ' + Array.prototype.slice.apply(arguments).join(' '))
+        }
         for (var i = 0; i < arguments.length; i++){
             fw.patterns.add(arguments[i])
         }
-        fw.pushTask()
-        process.nextTick(function(){
-            fw.crawl('.', 0)
-            fw.popTask()
-        })
+        fw.trackDir('.')
     }
 
     fw.ifFileOutOfDate = function(filename, callback){
