@@ -1,6 +1,5 @@
 var EventEmitter = require('events').EventEmitter
 var path = require('path')
-var Set = require('simplesets').Set
 var Glob = require('./glob')
 var fs = require('fs')
 var minimatch = require('minimatch')
