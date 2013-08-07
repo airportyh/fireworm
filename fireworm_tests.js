@@ -4,6 +4,7 @@ var exec = require('child_process').exec
 var async = require('async')
 var Set = require('set')
 var path = require('path')
+var spy = require('ispy')
 
 suite('fireworm', function(){
   var w
@@ -49,63 +50,59 @@ suite('fireworm', function(){
       assert.deepEqual(w.watchedFiles(), [abs('a_dir/one.txt')])
     })
 
-  //    it('fires change iff when you modify the file', function(done){
-  //        this.timeout(3000)
-  //        setTimeout(function(){
-  //            exec('touch -m a_dir/one.txt')
-  //            w.once('change', function(filename){
-  //                var changed = sinon.spy()
-  //                w.once('change', changed)
-  //                setTimeout(function(){
-  //                    exec('touch -a a_dir/one.txt', function(){
-  //                        setTimeout(function(){
-  //                            expect(changed.called).to.not.be.ok
-  //                            done()
-  //                        }, 10)
-  //                    })
-  //                }, 1000)
-  //            })
-  //        }, 1000)
-  //    })
+    test('fires change iff when you modify the file', function(done){
+      exec('touch -m a_dir/one.txt')
+      w.once('change', function(filename){
+        var changed = spy()
+        w.once('change', changed)
+        exec('touch -a a_dir/one.txt')
+        changed.on('call', function(){
+          done()
+        })
+      })
+    })
   })
-  //it('watches multiple files', function(done){
-  //    w.add('a_dir/one.txt', 'a_dir/three.txt')
-  //    w.once('ready', function(){
-  //        expect(w.watchedFiles()).to.deep.equal(
-  //            ['a_dir/one.txt', 'a_dir/three.txt'])
-  //        done()
-  //    })
-  //})
-  //describe('file watching', function(){
-  //    function cleanUp(done){
-  //        async.series([                      function(next)
-  //        { exec('rm a_dir/four.txt',         function(){ next() }) } , function(next)
-  //        { exec('rm -fr a_dir/another_dir',  function(){ next() }) } , function(next)
-  //        { exec('rm -fr b_dir',              function(){ next() }) }
-  //        ], done)
-  //    }
-  //    afterEach(cleanUp)
-  //    beforeEach(cleanUp)
-  //    it('fires change on file changed', function(done){
-  //        w.add('a_dir/one.txt')
-  //        w.once('ready', function(){
-  //            exec('touch -m a_dir/one.txt')
-  //            w.once('change', function(filename){
-  //                expect(filename).to.equal('a_dir/one.txt')
-  //                done()
-  //            })
-  //        })
-  //    })
-  //    it('fires change on new file added', function(done){
-  //        w.add('a_dir/*.txt')
-  //        w.once('ready', function(){
-  //            exec('touch -m a_dir/four.txt')
-  //            w.once('change', function(filename){
-  //                expect(filename).to.equal('a_dir/four.txt')
-  //                done()
-  //            })
-  //        })
-  //    })
+  test.skip('watches multiple files', function(done){
+    w.add('a_dir/one.txt', 'a_dir/three.txt')
+    w.once('ready', function(){
+      console.error(w.watchedFiles())
+      assert.deepEqual(w.watchedFiles(), 
+        [abs('a_dir/one.txt'), abs('a_dir/three.txt')])
+      done()
+    })
+  })
+  suite('file watching', function(){
+    function cleanUp(done){
+      async.series([                      function(next)
+      { exec('rm a_dir/four.txt',         function(){ next() }) } , function(next)
+      { exec('rm -fr a_dir/another_dir',  function(){ next() }) } , function(next)
+      { exec('rm -fr b_dir',              function(){ next() }) }
+      ], done)
+    }
+    setup(cleanUp)
+    teardown(cleanUp)
+    test('fires change on file changed', function(done){
+      w.add('a_dir/one.txt')
+      w.once('ready', function(){
+        exec('touch -m a_dir/one.txt')
+        w.once('change', function(filename){
+          assert.equal(filename, abs('a_dir/one.txt'))
+          done()
+        })
+      })
+    })
+
+    test.skip('fires change on new file added', function(done){
+      w.add('a_dir/*.txt')
+      w.once('ready', function(){
+        exec('touch -m a_dir/four.txt')
+        w.once('change', function(filename){
+          assert.equal(filename, 'a_dir/four.txt')
+          done()
+        })
+      })
+    })
+
   //    it('fires change on new file inside new dir', function(done){
   //        w.add('a_dir/another_dir/*.txt')
   //        w.once('ready', function(){
@@ -153,7 +150,7 @@ suite('fireworm', function(){
   //            })
   //        })
   //    })
-  //})
+  })
   //describe('isTracked', function(){
   //    it('should be ok if already tracked', function(){
   //        w.trackedDirs = new Set(['.'])

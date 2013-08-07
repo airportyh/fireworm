@@ -1,4 +1,5 @@
 var path = require('path')
+var minimatch = require('minimatch')
 
 function Glob(string){
   this.string = path.resolve(string)
