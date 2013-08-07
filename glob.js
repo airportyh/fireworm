@@ -18,7 +18,7 @@ Glob.prototype = {
     var idx = dir.lastIndexOf('/')
     return dir.substring(0, idx)
   },
-  valueOf: function(){
+  toString: function(){
     return this.string
   }
 }

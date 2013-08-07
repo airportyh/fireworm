@@ -34,6 +34,11 @@ suite('fireworm', function(){
         abs('a_dir/one.txt'), abs('a_dir/three.txt')
       ])
     })
+    test('keeps track of globs', function(){
+      assert.deepEqual(w.watchedGlobs(), [
+        abs('a_dir/*.txt')
+      ])
+    })
   })
   suite('watching a_dir/one.txt', function(){
     setup(function(done){
