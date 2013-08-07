@@ -6,8 +6,21 @@ var minimatch = require('minimatch')
 var Set = require('set')
 var async = require('async')
 
+function DirectoryStatStore(dirpath){
+  this.path = dirpath
+}
+DirectoryStatStore.prototype = {
+  crawl: function(){
+  },
+  toString: function(){
+    return this.path
+  }
+}
+
+
 function Fireworm(){
   if (!(this instanceof Fireworm)) return new Fireworm
+  this.dirStats = {}
   this.globs = new Set
   this.dirs = new Set
   this.files = new Set
@@ -27,14 +40,13 @@ Fireworm.prototype = {
     glob = new Glob(glob)
     this.globs.add(glob)
     var baseDir = glob.baseDir()
-    if (this.dirs.contains(baseDir)){
-      process.nextTick(function(){ callback(null) })
-      return
-    }else{
-      var self = this
-      this.dirs.add(baseDir)
-      this.crawlDir(baseDir, callback)
+    var dir = this.dirWatchers[baseDir]
+    if (!dir){
+      dir = new DirectoryWatcher(dir)
+      this.dirWatchers[baseDir] = dir
+      dir.crawl(callback)
     }
+    dir.addGlob(glob)
   },
   crawlDir: function(dir, callback){
     var self = this

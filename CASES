@@ -1,0 +1,16 @@
+Cases to worry about
+====================
+
+1. file gets renamed and we care about its new path
+2. file gets renamed and we used to care about its new path
+3. file gets renamed and we care about both the new and old paths
+3. file gets added to a path that we care about
+4. file gets removed that used to be a path we care about
+5. file gets removed that was a path we don't care about
+5. directory gets renamed and we care about the new path
+6. directory gets renamed and we cared about its old path
+7. directory gets renamed and care about both the new and old paths
+8. directory gets added to a path that we care about
+9. directory gets added to a path that we do not care about
+10. directory gets remmoved that used to be a path we care about
+11. directory gets removed that was a path we don't care about
