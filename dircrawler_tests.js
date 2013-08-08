@@ -7,7 +7,7 @@ var fs = require('fs')
 var mkdirp = require('mkdirp')
 var rimraf = require('rimraf')
 
-suite.only('dir crawler', function(){
+suite('dir crawler', function(){
 
   var c, changed
 
@@ -41,13 +41,17 @@ suite.only('dir crawler', function(){
     })
   })
 
-  test('file modified but we dont care', function(done){
+  test.only('file modified but we dont care', function(done){
     c.add('a_dir/two.txt')
     c.crawl(function(){
       touch('a_dir/one.txt', function(){
         assertNotCalled(changed)
-        done()
+        //done()
       })
+    })
+    changed.on('call', function(evt, filepath){
+      console.error(evt, filepath)
+      done(new Error('should not have called'))
     })
   })
 
@@ -64,7 +68,9 @@ suite.only('dir crawler', function(){
   test('file gets renamed to something we want', function(done){
     c.add('a_dir/two.txt')
     c.crawl(function(){
-      exec('mv a_dir/one.txt a_dir/two.txt')
+      exec('mv a_dir/one.txt a_dir/two.txt', function(){
+        
+      })
     })
     changed.on('call', function(evt, filepath){
       done()
@@ -76,6 +82,16 @@ suite.only('dir crawler', function(){
     c.crawl(function(){
       exec('mv a_dir/one.txt a_dir/three.txt', function(){
         assertNotCalled(changed)
+        done()
+      })
+    })
+  })
+
+  test.skip('file gets renamed from something we want to something we dont', function(done){
+    c.add('a_dir/one.txt')
+    c.crawl(function(){
+      exec('mv a_dir/one.txt a_dir/three.txt', function(){
+        assertCalled(changed)
         done()
       })
     })
@@ -103,4 +119,8 @@ function touch(filepath, callback){
 
 function assertNotCalled(spy){
   assert(!spy.called, 'should not have called')
+}
+
+function assertCalled(spy){
+  assert(spy.called, 'should have called')
 }
