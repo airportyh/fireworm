@@ -35,6 +35,7 @@ DirCrawler.prototype = {
       self.stats[filepath] = stat
       if (!self.watchers[filepath]){
         if (!stat.isFile() || self.wantFile(filepath)){
+          console.error('watching', filepath)
           self.watchers[filepath] = 
             fs.watch(filepath, function(evt){
               self.onFileWatchEvent(evt, filepath)

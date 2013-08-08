@@ -4,8 +4,10 @@ var exec = require('child_process').exec
 var spy = require('ispy')
 var path = require('path')
 var fs = require('fs')
+var mkdirp = require('mkdirp')
+var rimraf = require('rimraf')
 
-suite.only('dir crawler', function(){
+suite('dir crawler', function(){
 
   var c, changed
 
@@ -22,13 +24,14 @@ suite.only('dir crawler', function(){
 
   test('gets stats', function(done){
     c = new DirCrawler('a_dir')
+    c.add('a_dir/one.txt')
     c.crawl(function(){
       assert(c.getStat('a_dir/one.txt'))
       done()
     })
   })
 
-  test('file modified', function(done){
+  test.only('file modified', function(done){
     c.add('a_dir/one.txt')
     c.crawl(function(){
       touch('a_dir/one.txt')
@@ -86,8 +89,10 @@ function abs(filepath){
 }
 
 function createFixture(callback){
-  exec('rm -fr a_dir; mkdir a_dir; touch a_dir/one.txt', function(){
-    callback()
+  rimraf('a_dir', function(){
+    mkdirp('a_dir', function(){
+      touch('a_dir/one.txt', callback)
+    })
   })
 }
 
