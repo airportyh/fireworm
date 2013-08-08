@@ -7,7 +7,7 @@ var fs = require('fs')
 var mkdirp = require('mkdirp')
 var rimraf = require('rimraf')
 
-suite('dir crawler', function(){
+suite.only('dir crawler', function(){
 
   var c, changed
 
@@ -31,7 +31,7 @@ suite('dir crawler', function(){
     })
   })
 
-  test.only('file modified', function(done){
+  test('file modified', function(done){
     c.add('a_dir/one.txt')
     c.crawl(function(){
       touch('a_dir/one.txt')
