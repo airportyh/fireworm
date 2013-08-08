@@ -5,7 +5,7 @@ var EventEmitter = require('events').EventEmitter
 var minimatch = require('minimatch')
 
 function DirCrawler(dirpath){
-  this.path = path.resolve(dirpath)
+  this.path = path.resolve(path.normalize(dirpath))
   this.crawling = false
   this.stats = {}
   this.watchers = {}
@@ -59,6 +59,7 @@ DirCrawler.prototype = {
     })
   },
   add: function(filepath){
+    filepath = path.normalize(filepath)
     this.globs[filepath] = true
   },
   onFileWatchEvent: function(evt, filepath){

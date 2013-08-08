@@ -80,8 +80,9 @@ suite.only('dir crawler', function(){
 
 })
 
-function abs(pth){
-  return path.resolve(pth)
+function abs(filepath){
+  filepath = path.normalize(filepath)
+  return path.resolve(filepath)
 }
 
 function createFixture(callback){
@@ -91,6 +92,7 @@ function createFixture(callback){
 }
 
 function touch(filepath, callback){
+  filepath = path.normalize(filepath)
   fs.open(filepath, 'w', callback)
 }
 
