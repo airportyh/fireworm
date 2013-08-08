@@ -3,49 +3,77 @@ var assert = require('chai').assert
 var exec = require('child_process').exec
 var spy = require('ispy')
 var path = require('path')
+var fs = require('fs')
 
 suite.only('dir crawler', function(){
 
-  var c
+  var c, changed
+
+  setup(function(done){
+    createFixture(done)
+    c = new DirCrawler('a_dir')
+    changed = spy()
+    c.once('change', changed)
+  })
 
   teardown(function(){
     c.clear()
   })
 
-  test('crawls', function(done){
-    c = new DirCrawler('./')
+  test('gets stats', function(done){
+    c = new DirCrawler('a_dir')
     c.crawl(function(){
       assert(c.getStat('a_dir/one.txt'))
       done()
     })
   })
 
-  test('watches for file changes', function(done){
-    c = new DirCrawler('./')
+  test('file modified', function(done){
+    c.add('a_dir/one.txt')
     c.crawl(function(){
-      var changed = spy()
-      c.once('change', changed)
-      exec('touch -m a_dir/one.txt')
+      touch('a_dir/one.txt')
       changed.on('call', function(evt, filepath){
-        assert.equal(evt, 'change')
-        assert.equal(filepath, abs('a_dir/one.txt'))
         done()
       })
     })
   })
 
-  test('watches for dir changes', function(done){
-    c = new DirCrawler('./')
+  test('file modified but we dont care', function(done){
+    c.add('a_dir/two.txt')
     c.crawl(function(){
-      var changed = spy()
-      c.once('change', changed)
-      exec('touch -m a_dir/two.txt')
-      changed.on('call', function(evt, filepath){
-        assert.equal(evt, 'rename')
-        assert.equal(filepath, abs('a_dir'))
-        exec('rm a_dir/two.txt', function(){
-          done()
-        })
+      touch('a_dir/one.txt', function(){
+        assertNotCalled(changed)
+        done()
+      })
+    })
+  })
+
+  test('file created that we care about', function(done){
+    c.add('a_dir/two.txt')
+    c.crawl(function(){
+      touch('a_dir/two.txt')
+    })
+    changed.on('call', function(evt, filepath){
+      done()
+    })
+  })
+
+  test('file gets renamed to something we want', function(done){
+    c.add('a_dir/two.txt')
+    c.crawl(function(){
+      exec('mv a_dir/one.txt a_dir/two.txt')
+    })
+    changed.on('call', function(evt, filepath){
+      done()
+    })
+  })
+
+  test('file gets renamed to something we dont want', function(done){
+    c.add('a_dir/two.txt')
+    c.crawl(function(){
+      exec('mv a_dir/one.txt a_dir/three.txt', function(){
+        assertNotCalled(changed)
+        done()
       })
     })
   })
@@ -54,4 +82,18 @@ suite.only('dir crawler', function(){
 
 function abs(pth){
   return path.resolve(pth)
+}
+
+function createFixture(callback){
+  exec('rm -fr a_dir; mkdir a_dir; touch a_dir/one.txt', function(){
+    callback()
+  })
+}
+
+function touch(filepath, callback){
+  fs.open(filepath, 'w', callback)
+}
+
+function assertNotCalled(spy){
+  assert(!spy.called, 'should not have called')
 }
