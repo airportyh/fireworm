@@ -7,7 +7,7 @@ var fs = require('fs')
 var mkdirp = require('mkdirp')
 var rimraf = require('rimraf')
 
-suite('dir crawler', function(){
+suite.only('dir crawler', function(){
 
   var c, changed
 
@@ -31,27 +31,42 @@ suite('dir crawler', function(){
     })
   })
 
-  test('file modified', function(done){
+  test('file accessed doesnt fire', function(done){
     c.add('a_dir/one.txt')
     c.crawl(function(){
-      touch('a_dir/one.txt')
-      changed.on('call', function(evt, filepath){
-        done()
-      })
+      setTimeout(function(){
+        access('a_dir/one.txt', function(){
+          setTimeout(function(){
+            assertNotCalled(changed)
+            done()
+          }, 200)
+        })
+      }, 400)
     })
   })
 
-  test.only('file modified but we dont care', function(done){
+  test('file modified', function(done){
+    this.timeout(3000)
+    c.add('a_dir/one.txt')
+    c.crawl(function(){
+      setTimeout(function(){
+        touch('a_dir/one.txt')
+        changed.once('call', function(evt, filepath){
+          done()
+        })
+      }, 800)
+    })
+  })
+
+  test('file also modified but ', function(done){
     c.add('a_dir/two.txt')
     c.crawl(function(){
       touch('a_dir/one.txt', function(){
-        assertNotCalled(changed)
-        //done()
+        setTimeout(function(){
+          assertNotCalled(changed)
+          done()
+        }, 200)  
       })
-    })
-    changed.on('call', function(evt, filepath){
-      console.error(evt, filepath)
-      done(new Error('should not have called'))
     })
   })
 
@@ -87,13 +102,17 @@ suite('dir crawler', function(){
     })
   })
 
-  test.skip('file gets renamed from something we want to something we dont', function(done){
+  test('file gets renamed from something we want to something we dont', function(done){
     c.add('a_dir/one.txt')
     c.crawl(function(){
-      exec('mv a_dir/one.txt a_dir/three.txt', function(){
-        assertCalled(changed)
-        done()
-      })
+      setTimeout(function(){
+        exec('mv a_dir/one.txt a_dir/three.txt', function(){
+          setTimeout(function(){
+            assertCalled(changed)
+            done()
+          }, 200)
+        })
+      }, 400)
     })
   })
 
@@ -110,6 +129,11 @@ function createFixture(callback){
       touch('a_dir/one.txt', callback)
     })
   })
+}
+
+function access(filepath, callback){
+  filepath = path.normalize(filepath)
+  exec('touch -a ' + filepath, callback)
 }
 
 function touch(filepath, callback){

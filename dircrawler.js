@@ -34,10 +34,15 @@ DirCrawler.prototype = {
       }
       self.stats[filepath] = stat
       if (!self.watchers[filepath]){
-        if (!stat.isFile() || self.wantFile(filepath)){
+        if (stat.isDirectory()){
           self.watchers[filepath] = 
-            fs.watch(filepath, function(evt){
-              self.onFileWatchEvent(evt, filepath)
+            fs.watch(filepath, function(evt, filename){
+              self.onDirAccessed(evt, filename, filepath)
+            })
+        }else if (stat.isFile() && self.wantFile(filepath)){
+          self.watchers[filepath] = 
+            fs.watch(filepath, function(evt, filename){
+              self.onFileAccessed(evt, filename, filepath)
             })
         }
       }
@@ -59,19 +64,57 @@ DirCrawler.prototype = {
     })
   },
   add: function(filepath){
-    filepath = path.normalize(filepath)
+    filepath = path.resolve(path.normalize(filepath))
     this.globs[filepath] = true
   },
-  onFileWatchEvent: function(evt, filepath){
+  onFileAccessed: function(evt, filename, filepath){
     if (this.crawling) return
-    this.emit('change', evt, filepath)
+    //console.error('onfileaccessed', evt, filename, filepath)
+    if (this.wantFile(filepath)){
+      //console.error('checking modified')
+      this.fireChangedIfModified(filepath)
+    }
+  },
+  onDirAccessed: function(evt, filename, dirpath){
+    if (this.crawling) return
+    //console.error('ondiraccessed', evt, filename, dirpath)
+    if (filename){
+      var filepath = path.join(dirpath, filename)
+      if (this.wantFile(filepath)){
+        this.fireChangedIfModified(filepath)
+      }
+    }
+  },
+  fireChangedIfModified: function(filepath){
+    var self = this
+    this.ifFileModified(filepath, function(){
+      self.emit('change', filepath)
+    })
+  },
+  ifFileModified: function(filepath, callback){
+    var self = this
+    fs.stat(filepath, function(err, stat){
+      var lastStat = self.stats[filepath]
+      if (err){
+        if (lastStat) return callback()
+        return
+      }
+      self.stats[filepath] = stat
+      if (!lastStat){
+        return callback()
+      }
+      if (lastStat.mtime.getTime() < stat.mtime.getTime()){
+        return callback()
+      }
+    })
   },
   getStat: function(filepath){
     return this.stats[path.resolve(filepath)]
   },
   wantEntry: function(entry){
-    return entry.charAt(0) !== '.' && 
-      entry !== 'node_modules'
+    if (entry.charAt(0) === '.') return false
+    if (entry === 'node_modules') return false
+    return true
   },
   clear: function(){
     for (var filepath in this.watchers){
