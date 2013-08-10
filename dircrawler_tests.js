@@ -1,6 +1,6 @@
 var DirCrawler = require('./dircrawler')
 var assert = require('chai').assert
-var exec = require('child_process').exec
+var child_process = require('child_process')
 var spy = require('ispy')
 var path = require('path')
 var fs = require('fs')
@@ -34,14 +34,10 @@ suite.only('dir crawler', function(){
   test('file accessed doesnt fire', function(done){
     c.add('a_dir/one.txt')
     c.crawl(function(){
-      setTimeout(function(){
-        access('a_dir/one.txt', function(){
-          setTimeout(function(){
-            assertNotCalled(changed)
-            done()
-          }, 200)
-        })
-      }, 400)
+      access('a_dir/one.txt', function(){
+        assertNotCalled(changed)
+        done()
+      })    
     })
   })
 
@@ -49,12 +45,10 @@ suite.only('dir crawler', function(){
     this.timeout(3000)
     c.add('a_dir/one.txt')
     c.crawl(function(){
-      setTimeout(function(){
-        touch('a_dir/one.txt')
-        changed.once('call', function(evt, filepath){
-          done()
-        })
-      }, 800)
+      touch('a_dir/one.txt')
+      changed.once('call', function(evt, filepath){
+        done()
+      })
     })
   })
 
@@ -62,10 +56,8 @@ suite.only('dir crawler', function(){
     c.add('a_dir/two.txt')
     c.crawl(function(){
       touch('a_dir/one.txt', function(){
-        setTimeout(function(){
-          assertNotCalled(changed)
-          done()
-        }, 200)  
+        assertNotCalled(changed)
+        done()
       })
     })
   })
@@ -83,12 +75,10 @@ suite.only('dir crawler', function(){
   test('file gets renamed to something we want', function(done){
     c.add('a_dir/two.txt')
     c.crawl(function(){
-      exec('mv a_dir/one.txt a_dir/two.txt', function(){
-        
+      exec('mv a_dir/one.txt a_dir/two.txt')
+      changed.on('call', function(evt, filepath){
+        done()
       })
-    })
-    changed.on('call', function(evt, filepath){
-      done()
     })
   })
 
@@ -104,15 +94,11 @@ suite.only('dir crawler', function(){
 
   test('file gets renamed from something we want to something we dont', function(done){
     c.add('a_dir/one.txt')
-    c.crawl(function(){
-      setTimeout(function(){
-        exec('mv a_dir/one.txt a_dir/three.txt', function(){
-          setTimeout(function(){
-            assertCalled(changed)
-            done()
-          }, 200)
-        })
-      }, 400)
+    c.crawl(function(){  
+      exec('mv a_dir/one.txt a_dir/three.txt', function(){
+        assertCalled(changed)
+        done()
+      })
     })
   })
 
@@ -133,12 +119,23 @@ function createFixture(callback){
 
 function access(filepath, callback){
   filepath = path.normalize(filepath)
-  exec('touch -a ' + filepath, callback)
+  exec('touch -a ' + filepath, function(){
+    setTimeout(callback, 200)
+  })
+}
+
+function exec(command, callback){
+  child_process.exec(command, function(){
+    var args = arguments
+    setTimeout(function(){
+      if (callback) callback.apply(null, args)
+    }, 200)
+  })
 }
 
 function touch(filepath, callback){
   filepath = path.normalize(filepath)
-  fs.open(filepath, 'w', callback)
+  exec('touch ' + filepath, callback)
 }
 
 function assertNotCalled(spy){

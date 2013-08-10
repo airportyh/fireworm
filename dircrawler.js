@@ -23,7 +23,7 @@ DirCrawler.prototype = {
         // watchers to get read it seems
         self.crawling = false
         callback(err)
-      }, 200)
+      }, 800)
     })
   },
   crawldir: function(filepath, callback){
