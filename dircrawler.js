@@ -25,7 +25,7 @@ DirCrawler.prototype = {
       callback(err)
     })
   },
-  stat: function(filepath, callback){
+  throttledStat: function(filepath, callback){
     // throttled wrapper for fs.stat
     var tid
     var self = this
@@ -41,7 +41,7 @@ DirCrawler.prototype = {
   },
   crawldir: function(filepath, callback){
     var self = this
-    this.stat(filepath, function(err, stat){
+    fs.stat(filepath, function(err, stat){
       if (err){
         return callback(err)
       }
@@ -103,7 +103,7 @@ DirCrawler.prototype = {
   },
   ifFileModified: function(filepath, callback){
     var self = this
-    this.stat(filepath, function(err, stat){
+    this.throttledStat(filepath, function(err, stat){
       var lastStat = self.stats[filepath]
       if (err){
         if (lastStat) return callback()

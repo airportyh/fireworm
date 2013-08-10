@@ -42,7 +42,7 @@ suite.only('dir crawler', function(){
           assert.equal(filepath, abs('a_dir/one.txt'))
           done()
         })
-      }, 600)
+      }, 1000)
     })
   })
 
@@ -103,7 +103,7 @@ suite.only('dir crawler', function(){
     c.add('a_dir/one.txt')
     c.crawl(function(){
       exec('rm a_dir/one.txt')
-      change.on('call', function(filepath){
+      changed.on('call', function(filepath){
         assert.equal(filepath, abs('a_dir/one.txt'))
         done()
       })
