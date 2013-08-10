@@ -108,6 +108,15 @@ suite.only('dir crawler', function(){
     })
   })
 
+  test('file we dont care about gets removed', function(){
+    c.add('a_dir/two.txt')
+    c.crawl(function(){
+      exec('rm a_dir/one.txt', function(){
+        assertNotCalled(changed)
+      })
+    })
+  })
+
 })
 
 function abs(filepath){
