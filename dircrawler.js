@@ -26,6 +26,7 @@ DirCrawler.prototype = {
     })
   },
   stat: function(filepath, callback){
+    // throttled wrapper for fs.stat
     var tid
     var self = this
     if (tid = this.statTimers[filepath]){
