@@ -18,13 +18,11 @@ DirCrawler.prototype = {
   crawl: function(callback){
     var self = this
     this.crawling = true
+    var start = new Date().getTime()
     this.crawldir(this.path, function(err){
-      setTimeout(function(){
-        // needs ~800ms??? in order for the
-        // watchers to get read it seems
-        self.crawling = false
-        callback(err)
-      }, 800)
+      var end = new Date().getTime()
+      self.crawling = false
+      callback(err)
     })
   },
   stat: function(filepath, callback){
@@ -35,7 +33,9 @@ DirCrawler.prototype = {
     }
     this.statTimers[filepath] = setTimeout(function(){
       delete self.statTimers[filepath]  
-      fs.stat(filepath, callback)
+      fs.stat(filepath, function(err, stat){
+        callback(err, stat)
+      })
     }, 200)
   },
   crawldir: function(filepath, callback){
@@ -81,15 +81,12 @@ DirCrawler.prototype = {
   },
   onFileAccessed: function(evt, filename, filepath){
     if (this.crawling) return
-    //console.error('onfileaccessed', evt, filename, filepath)
     if (this.wantFile(filepath)){
-      //console.error('checking modified')
       this.fireChangedIfModified(filepath)
     }
   },
   onDirAccessed: function(evt, filename, dirpath){
     if (this.crawling) return
-    //console.error('ondiraccessed', evt, filename, dirpath)
     if (filename){
       var filepath = path.join(dirpath, filename)
       if (this.wantFile(filepath)){

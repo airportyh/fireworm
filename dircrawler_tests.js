@@ -36,11 +36,13 @@ suite.only('dir crawler', function(){
     this.timeout(3000)
     c.add('a_dir/one.txt')
     c.crawl(function(){
-      touch('a_dir/one.txt')
-      changed.once('call', function(filepath){
-        assert.equal(filepath, abs('a_dir/one.txt'))
-        done()
-      })
+      setTimeout(function(){
+        touch('a_dir/one.txt')
+        changed.once('call', function(filepath){
+          assert.equal(filepath, abs('a_dir/one.txt'))
+          done()
+        })
+      }, 600)
     })
   })
 
@@ -140,9 +142,7 @@ function access(filepath, callback){
 function exec(command, callback){
   child_process.exec(command, function(){
     var args = arguments
-    setTimeout(function(){
-      if (callback) callback.apply(null, args)
-    }, 400)
+    if (callback) callback.apply(null, args)
   })
 }
 
