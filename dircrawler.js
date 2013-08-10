@@ -7,6 +7,7 @@ var minimatch = require('minimatch')
 function DirCrawler(dirpath){
   this.path = path.resolve(path.normalize(dirpath))
   this.crawling = false
+  this.statTimers = {}
   this.stats = {}
   this.watchers = {}
   this.globs = {}
@@ -19,16 +20,27 @@ DirCrawler.prototype = {
     this.crawling = true
     this.crawldir(this.path, function(err){
       setTimeout(function(){
-        // needs ~200ms in order for the
+        // needs ~800ms??? in order for the
         // watchers to get read it seems
         self.crawling = false
         callback(err)
       }, 800)
     })
   },
+  stat: function(filepath, callback){
+    var tid
+    var self = this
+    if (tid = this.statTimers[filepath]){
+      clearTimeout(tid)
+    }
+    this.statTimers[filepath] = setTimeout(function(){
+      delete self.statTimers[filepath]  
+      fs.stat(filepath, callback)
+    }, 200)
+  },
   crawldir: function(filepath, callback){
     var self = this
-    fs.stat(filepath, function(err, stat){
+    this.stat(filepath, function(err, stat){
       if (err){
         return callback(err)
       }
@@ -93,7 +105,7 @@ DirCrawler.prototype = {
   },
   ifFileModified: function(filepath, callback){
     var self = this
-    fs.stat(filepath, function(err, stat){
+    this.stat(filepath, function(err, stat){
       var lastStat = self.stats[filepath]
       if (err){
         if (lastStat) return callback()

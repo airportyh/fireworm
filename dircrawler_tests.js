@@ -129,7 +129,7 @@ function exec(command, callback){
     var args = arguments
     setTimeout(function(){
       if (callback) callback.apply(null, args)
-    }, 200)
+    }, 400)
   })
 }
 
