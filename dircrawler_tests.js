@@ -22,15 +22,6 @@ suite.only('dir crawler', function(){
     c.clear()
   })
 
-  test('gets stats', function(done){
-    c = new DirCrawler('a_dir')
-    c.add('a_dir/one.txt')
-    c.crawl(function(){
-      assert(c.getStat('a_dir/one.txt'))
-      done()
-    })
-  })
-
   test('file accessed doesnt fire', function(done){
     c.add('a_dir/one.txt')
     c.crawl(function(){
@@ -46,7 +37,8 @@ suite.only('dir crawler', function(){
     c.add('a_dir/one.txt')
     c.crawl(function(){
       touch('a_dir/one.txt')
-      changed.once('call', function(evt, filepath){
+      changed.once('call', function(filepath){
+        assert.equal(filepath, abs('a_dir/one.txt'))
         done()
       })
     })
@@ -67,7 +59,8 @@ suite.only('dir crawler', function(){
     c.crawl(function(){
       touch('a_dir/two.txt')
     })
-    changed.on('call', function(evt, filepath){
+    changed.on('call', function(filepath){
+      assert.equal(filepath, abs('a_dir/two.txt'))
       done()
     })
   })
@@ -76,7 +69,8 @@ suite.only('dir crawler', function(){
     c.add('a_dir/two.txt')
     c.crawl(function(){
       exec('mv a_dir/one.txt a_dir/two.txt')
-      changed.on('call', function(evt, filepath){
+      changed.on('call', function(filepath){
+        assert.equal(filepath, abs('a_dir/two.txt'))
         done()
       })
     })
@@ -95,8 +89,20 @@ suite.only('dir crawler', function(){
   test('file gets renamed from something we want to something we dont', function(done){
     c.add('a_dir/one.txt')
     c.crawl(function(){  
-      exec('mv a_dir/one.txt a_dir/three.txt', function(){
-        assertCalled(changed)
+      exec('mv a_dir/one.txt a_dir/three.txt')
+      changed.on('call', function(filepath){
+        assert.equal(filepath, abs('a_dir/one.txt'))
+        done()
+      })
+    })
+  })
+
+  test('file we care about gets removed', function(){
+    c.add('a_dir/one.txt')
+    c.crawl(function(){
+      exec('rm a_dir/one.txt')
+      change.on('call', function(filepath){
+        assert.equal(filepath, abs('a_dir/one.txt'))
         done()
       })
     })
