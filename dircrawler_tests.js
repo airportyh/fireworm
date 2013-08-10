@@ -134,9 +134,7 @@ function createFixture(callback){
 
 function access(filepath, callback){
   filepath = path.normalize(filepath)
-  exec('touch -a ' + filepath, function(){
-    setTimeout(callback, 200)
-  })
+  exec('touch -a ' + filepath, callback)
 }
 
 function exec(command, callback){
