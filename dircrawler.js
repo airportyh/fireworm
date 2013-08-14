@@ -111,8 +111,11 @@ DirCrawler.prototype = {
       if (this.wantFile(filepath)){
         this.fireChangedIfModified(filepath)
       }else if (this.wantDirectory(filepath)){
-        this.fireChangedIfModified(filepath)
-        this.crawldir(filepath)
+        var self = this
+        this.ifFileModified(filepath, function(){
+          self.emit('change', filepath)
+          self.crawldir(filepath)
+        })
       }
     }
   },
