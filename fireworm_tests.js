@@ -6,7 +6,7 @@ var Set = require('set')
 var path = require('path')
 var spy = require('ispy')
 
-suite('fireworm', function(){
+suite.skip('fireworm', function(){
   var w
   setup(function(){
     w = fireworm()

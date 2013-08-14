@@ -26,6 +26,9 @@ DirCrawler.prototype = {
     })
   },
   throttledStat: function(filepath, callback){
+    fs.stat(filepath, callback)
+    /*
+    return
     // throttled wrapper for fs.stat
     var tid
     var self = this
@@ -38,12 +41,29 @@ DirCrawler.prototype = {
         callback(err, stat)
       })
     }, 200)
+*/
   },
   crawldir: function(filepath, callback){
     var self = this
+    this.statAndWatch(filepath, function(err, stat){
+      if (stat.isDirectory()){
+        fs.readdir(filepath, function(err, entries){
+          entries = entries.filter(self.wantEntry)
+          async.each(entries, function(entry, next){
+            self.crawldir(path.join(filepath, entry), next)
+          }, callback)
+        })
+      }else{
+        callback(null)
+      }
+    })
+  },
+  statAndWatch: function(filepath, callback){
+    var self = this
     fs.stat(filepath, function(err, stat){
+      var prevStat = self.stats[filepath]
       if (err){
-        return callback(err)
+        return callback(err, null, prevStat)
       }
       self.stats[filepath] = stat
       if (!self.watchers[filepath]){
@@ -59,16 +79,7 @@ DirCrawler.prototype = {
             })
         }
       }
-      if (stat.isDirectory()){
-        fs.readdir(filepath, function(err, entries){
-          entries = entries.filter(self.wantEntry)
-          async.each(entries, function(entry, next){
-            self.crawldir(path.join(filepath, entry), next)
-          }, callback)
-        })
-      }else{
-        callback(null)
-      }
+      callback(null, stat, prevStat)
     })
   },
   wantFile: function(filepath){
@@ -103,13 +114,11 @@ DirCrawler.prototype = {
   },
   ifFileModified: function(filepath, callback){
     var self = this
-    this.throttledStat(filepath, function(err, stat){
-      var lastStat = self.stats[filepath]
+    this.statAndWatch(filepath, function(err, stat, lastStat){
       if (err){
         if (lastStat) return callback()
         return
       }
-      self.stats[filepath] = stat
       if (!lastStat){
         return callback()
       }

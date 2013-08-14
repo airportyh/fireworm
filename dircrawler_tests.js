@@ -7,7 +7,7 @@ var fs = require('fs')
 var mkdirp = require('mkdirp')
 var rimraf = require('rimraf')
 
-suite.only('dir crawler', function(){
+suite('dir crawler', function(){
 
   var c, changed
 
@@ -62,6 +62,28 @@ suite.only('dir crawler', function(){
     changed.on('call', function(filepath){
       assert.equal(filepath, abs('a_dir/two.txt'))
       done()
+    })
+  })
+
+  test('watches a new file that we care about', function(done){
+    this.timeout(3000)
+    c.add('a_dir/two.txt')
+    c.removeAllListeners()
+    c.on('change', changed)
+    c.crawl(function(){
+      touch('a_dir/two.txt')
+      var callCount = 0
+      changed.on('call', function(filepath){
+        callCount++
+        assert.equal(filepath, abs('a_dir/two.txt'))
+        if (callCount === 1){
+          setTimeout(function(){
+            touch('a_dir/two.txt')
+          }, 1000)
+        }else if (callCount === 2){
+          done()
+        }
+      })
     })
   })
 
