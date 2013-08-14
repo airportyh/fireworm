@@ -26,8 +26,7 @@ suite.only('dir crawler', function(){
     c.add('a_dir/one.txt')
     c.crawl(function(){
       access('a_dir/one.txt', function(){
-        assertNotCalled(changed)
-        done()
+        assertNotCalledSoon(changed, done)
       })    
     })
   })
@@ -50,8 +49,7 @@ suite.only('dir crawler', function(){
     c.add('a_dir/two.txt')
     c.crawl(function(){
       touch('a_dir/one.txt', function(){
-        assertNotCalled(changed)
-        done()
+        assertNotCalledSoon(changed, done)
       })
     })
   })
@@ -82,8 +80,7 @@ suite.only('dir crawler', function(){
     c.add('a_dir/two.txt')
     c.crawl(function(){
       exec('mv a_dir/one.txt a_dir/three.txt', function(){
-        assertNotCalled(changed)
-        done()
+        assertNotCalledSoon(changed, done)
       })
     })
   })
@@ -99,7 +96,7 @@ suite.only('dir crawler', function(){
     })
   })
 
-  test('file we care about gets removed', function(){
+  test('file we care about gets removed', function(done){
     c.add('a_dir/one.txt')
     c.crawl(function(){
       exec('rm a_dir/one.txt')
@@ -110,11 +107,11 @@ suite.only('dir crawler', function(){
     })
   })
 
-  test('file we dont care about gets removed', function(){
+  test('file we dont care about gets removed', function(done){
     c.add('a_dir/two.txt')
     c.crawl(function(){
       exec('rm a_dir/one.txt', function(){
-        assertNotCalled(changed)
+        assertNotCalledSoon(changed, done)
       })
     })
   })
@@ -151,8 +148,11 @@ function touch(filepath, callback){
   exec('touch ' + filepath, callback)
 }
 
-function assertNotCalled(spy){
-  assert(!spy.called, 'should not have called')
+function assertNotCalledSoon(spy, done){
+  setTimeout(function(){
+    assert(!spy.called, 'should not have called')
+    done()
+  }, 300)
 }
 
 function assertCalled(spy){
