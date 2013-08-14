@@ -148,18 +148,22 @@ suite('dir crawler', function(){
     })
   })
 
-  test.skip('watches new directory contents', function(done){
+  test('watches new directory contents', function(done){
     c.add('a_dir/another_dir/*.js')
     c.removeAllListeners()
     c.crawl(function(){
       exec('mkdir a_dir/another_dir', function(){
-        exec('touch a_dir/another_dir/hello.js', function(){
-          
-        })
+        setTimeout(function(){
+          exec('touch a_dir/another_dir/hello.js')
+        }, 1000)
       })
     })
     c.on('change', function(filepath){
-      console.error('changed', filepath)
+      assert([abs('a_dir/another_dir'), 
+        abs('a_dir/another_dir/hello.js')].indexOf(filepath) !== -1)
+      if (filepath === abs('a_dir/another_dir/hello.js')){
+        done()
+      }
     })
   })
 

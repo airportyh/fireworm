@@ -3,6 +3,7 @@ var path = require('path')
 var async = require('async')
 var EventEmitter = require('events').EventEmitter
 var minimatch = require('minimatch')
+var matchesStart = require('./matches_start')
 
 function DirCrawler(dirpath){
   this.path = path.resolve(path.normalize(dirpath))
@@ -67,12 +68,15 @@ DirCrawler.prototype = {
       }
       self.stats[filepath] = stat
       if (!self.watchers[filepath]){
+
         if (stat.isDirectory()){
+          //console.error('watching', filepath)
           self.watchers[filepath] = 
             fs.watch(filepath, function(evt, filename){
               self.onDirAccessed(evt, filename, filepath)
             })
         }else if (stat.isFile() && self.wantFile(filepath)){
+          //console.error('watching', filepath)
           self.watchers[filepath] = 
             fs.watch(filepath, function(evt, filename){
               self.onFileAccessed(evt, filename, filepath)
@@ -93,16 +97,22 @@ DirCrawler.prototype = {
   },
   onFileAccessed: function(evt, filename, filepath){
     if (this.crawling) return
+    //console.error('onFileAccessed', evt, filename, filepath)
     if (this.wantFile(filepath)){
       this.fireChangedIfModified(filepath)
     }
   },
   onDirAccessed: function(evt, filename, dirpath){
     if (this.crawling) return
+    //console.error('onDirAccessed', evt, filename, dirpath)
+    var self = this
     if (filename){
       var filepath = path.join(dirpath, filename)
       if (this.wantFile(filepath)){
         this.fireChangedIfModified(filepath)
+      }else if (this.wantDirectory(filepath)){
+        this.fireChangedIfModified(filepath)
+        this.crawldir(filepath)
       }
     }
   },
@@ -134,6 +144,11 @@ DirCrawler.prototype = {
     if (entry.charAt(0) === '.') return false
     if (entry === 'node_modules') return false
     return true
+  },
+  wantDirectory: function(dirpath){
+    return Object.keys(this.globs).some(function(glob){
+      return matchesStart(dirpath, glob)
+    })
   },
   clear: function(){
     for (var filepath in this.watchers){
