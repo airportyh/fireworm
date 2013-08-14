@@ -155,15 +155,35 @@ suite('dir crawler', function(){
       exec('mkdir a_dir/another_dir', function(){
         setTimeout(function(){
           exec('touch a_dir/another_dir/hello.js')
-        }, 1000)
+        }, 200)
       })
     })
     c.on('change', function(filepath){
-      assert([abs('a_dir/another_dir'), 
-        abs('a_dir/another_dir/hello.js')].indexOf(filepath) !== -1)
+      assert.equal(filepath, abs('a_dir/another_dir/hello.js'))
       if (filepath === abs('a_dir/another_dir/hello.js')){
         done()
       }
+    })
+  })
+
+  test('watches files in a directory then dir got nuked', function(done){
+    c.add('a_dir/another_dir/*.js')
+    c.removeAllListeners()
+    c.crawl(function(){
+      exec('mkdir a_dir/another_dir', function(){
+        setTimeout(function(){
+          exec('touch a_dir/another_dir/hello.js')
+          setTimeout(function(){
+            exec('rm -fr a_dir/another_dir')
+          }, 200)
+        }, 200)
+      })
+    })
+    var callCount = 0
+    c.on('change', function(filepath){
+      callCount++
+      assert.equal(filepath, abs('a_dir/another_dir/hello.js'))
+      if (callCount === 2) done()
     })
   })
 

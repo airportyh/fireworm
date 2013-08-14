@@ -47,6 +47,7 @@ DirCrawler.prototype = {
   crawldir: function(filepath, callback){
     var self = this
     this.statAndWatch(filepath, function(err, stat){
+      if (err) return
       if (stat.isDirectory()){
         fs.readdir(filepath, function(err, entries){
           entries = entries.filter(self.wantEntry)
@@ -113,7 +114,6 @@ DirCrawler.prototype = {
       }else if (this.wantDirectory(filepath)){
         var self = this
         this.ifFileModified(filepath, function(){
-          self.emit('change', filepath)
           self.crawldir(filepath)
         })
       }
