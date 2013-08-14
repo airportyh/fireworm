@@ -138,6 +138,31 @@ suite('dir crawler', function(){
     })
   })
 
+  test('directory created which we care about', function(done){
+    c.add('a_dir/another_dir')
+    c.crawl(function(){
+      exec('mkdir a_dir/another_dir')
+      changed.on('call', function(){
+        done()
+      })
+    })
+  })
+
+  test.skip('watches new directory contents', function(done){
+    c.add('a_dir/another_dir/*.js')
+    c.removeAllListeners()
+    c.crawl(function(){
+      exec('mkdir a_dir/another_dir', function(){
+        exec('touch a_dir/another_dir/hello.js', function(){
+          
+        })
+      })
+    })
+    c.on('change', function(filepath){
+      console.error('changed', filepath)
+    })
+  })
+
 })
 
 function abs(filepath){
