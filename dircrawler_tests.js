@@ -124,6 +124,7 @@ suite('dir crawler', function(){
       exec('rm a_dir/one.txt')
       changed.on('call', function(filepath){
         assert.equal(filepath, abs('a_dir/one.txt'))
+        assert(!c.stats[filepath], 'should have removed the file stat')
         done()
       })
     })

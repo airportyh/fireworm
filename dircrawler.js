@@ -48,18 +48,6 @@ DirCrawler.prototype = {
     var self = this
     this.statAndWatch(filepath, function(err, stat){
       if (err){
-        var prevStat = self.stats[filepath]
-        if (prevStat && prevStat.isDirectory()){
-          Object.keys(self.stats).filter(function(fp){
-            if (fp.substring(0, filepath.length) === filepath){
-              if (self.wantFile(fp)){
-                self.emit('change', fp)
-              }
-              delete self.stats[fp]
-            }
-          })
-          delete self.stats[filepath]
-        }
         return
       }
       if (stat.isDirectory()){
@@ -79,6 +67,7 @@ DirCrawler.prototype = {
     fs.stat(filepath, function(err, stat){
       var prevStat = self.stats[filepath]
       if (err){
+        delete self.stats[filepath]
         return callback(err, null, prevStat)
       }
       self.stats[filepath] = stat
@@ -128,12 +117,25 @@ DirCrawler.prototype = {
       }else if (this.wantDirectory(filepath)){
         var self = this
         //console.error(filepath, 'checking modified')
-        this.ifFileModified(filepath, function(){
-          //console.error(filepath, 'was modified')
+        this.ifFileModified(filepath, function(err, stat, prevStat){
+          if (!stat && prevStat){
+            self.fireOrphansChanged(filepath)
+          }
           self.crawldir(filepath)
         })
       }
     }
+  },
+  fireOrphansChanged: function(filepath, prevStat){
+    var self = this
+    Object.keys(self.stats).filter(function(fp){
+      if (fp.substring(0, filepath.length) === filepath){
+        if (self.wantFile(fp)){
+          self.emit('change', fp)
+        }
+        delete self.stats[fp]
+      }
+    })
   },
   fireChangedIfModified: function(filepath){
     var self = this
@@ -145,14 +147,14 @@ DirCrawler.prototype = {
     var self = this
     this.statAndWatch(filepath, function(err, stat, lastStat){
       if (err){
-        if (lastStat) return callback()
+        if (lastStat) return callback(err, stat, lastStat)
         return
       }
       if (!lastStat){
-        return callback()
+        return callback(err, stat, lastStat)
       }
       if (lastStat.mtime.getTime() < stat.mtime.getTime()){
-        return callback()
+        return callback(err, stat, lastStat)
       }
     })
   },
