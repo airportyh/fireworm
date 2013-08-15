@@ -55,8 +55,10 @@ DirCrawler.prototype = {
               if (self.wantFile(fp)){
                 self.emit('change', fp)
               }
+              delete self.stats[fp]
             }
           })
+          delete self.stats[filepath]
         }
         return
       }
