@@ -166,21 +166,22 @@ suite('dir crawler', function(){
     })
   })
 
-  test('watches files in a directory then dir got nuked', function(done){
+  test('watches files in a directory then dir got moved', function(done){
     c.add('a_dir/another_dir/*.js')
     c.removeAllListeners()
     c.crawl(function(){
       exec('mkdir a_dir/another_dir', function(){
         setTimeout(function(){
-          exec('touch a_dir/another_dir/hello.js')
-          setTimeout(function(){
-            exec('rm -fr a_dir/another_dir')
-          }, 200)
+          exec('touch a_dir/another_dir/hello.js', function(){
+            setTimeout(function(){
+              exec('mv a_dir/another_dir /tmp/another_dir_' + randomSlug())
+            }, 200)
+          })
         }, 200)
       })
     })
     var callCount = 0
-    c.on('change', function(filepath){
+    c.on('change', function(filepath){ 
       callCount++
       assert.equal(filepath, abs('a_dir/another_dir/hello.js'))
       if (callCount === 2) done()
@@ -188,6 +189,10 @@ suite('dir crawler', function(){
   })
 
 })
+
+function randomSlug(){
+  return Math.floor(Math.random() * 10000000)
+}
 
 function abs(filepath){
   filepath = path.normalize(filepath)
