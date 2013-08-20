@@ -14,7 +14,7 @@ Usage
     var fireworm = require('fireworm')
 
     // make a new file watcher
-    var fw = fireworm()
+    var fw = fireworm('start_dir')
 
     // Add the files you want to watch for changes on (can be glob)
     fw.add('scripts/*.js')
