@@ -1,4 +1,4 @@
-var Glob = require('./glob')
+var Glob = require('../lib/glob')
 var assert = require('chai').assert
 var path = require('path')
 

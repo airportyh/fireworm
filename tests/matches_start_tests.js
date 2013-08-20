@@ -1,4 +1,4 @@
-var matches = require('./matches_start')
+var matches = require('../lib/matches_start')
 require('chai').should()
 describe('matchesBeginning', function(){
     it('should match globs', function(){

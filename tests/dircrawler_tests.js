@@ -1,4 +1,4 @@
-var DirCrawler = require('./dircrawler')
+var DirCrawler = require('../lib/dircrawler')
 var assert = require('chai').assert
 var child_process = require('child_process')
 var spy = require('ispy')
