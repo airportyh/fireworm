@@ -6,18 +6,6 @@ var minimatch = require('minimatch')
 var Set = require('set')
 var async = require('async')
 
-function DirectoryStatStore(dirpath){
-  this.path = dirpath
-}
-DirectoryStatStore.prototype = {
-  crawl: function(){
-  },
-  toString: function(){
-    return this.path
-  }
-}
-
-
 function Fireworm(){
   if (!(this instanceof Fireworm)) return new Fireworm
   this.dirStats = {}
