@@ -1,6 +1,6 @@
-var DirCrawler = require('./dircrawler')
+var fireworm = require('../index')
 
-var c = new DirCrawler('./')
+var c = fireworm('./')
 c.add('**/*.js')
 
 c.crawl(function(){})
