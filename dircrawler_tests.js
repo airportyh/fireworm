@@ -161,11 +161,9 @@ suite('dir crawler', function(){
     })
     var yesDone = false
     c.on('change', function(filepath){
-      if (yesDone) return
       assert.equal(filepath, abs('a_dir/another_dir/hello.js'))
       if (filepath === abs('a_dir/another_dir/hello.js')){
         done()
-        yesDone = true
       }
     })
   })
@@ -184,11 +182,9 @@ suite('dir crawler', function(){
         }, 200)
       })
     })
-    var callCount = 0
     c.on('change', function(filepath){ 
-      callCount++
       assert.equal(filepath, abs('a_dir/another_dir/hello.js'))
-      if (callCount === 2) done()
+      done()
     })
   })
 

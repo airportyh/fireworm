@@ -4,9 +4,7 @@ var async = require('async')
 var EventEmitter = require('events').EventEmitter
 var minimatch = require('minimatch')
 var matchesStart = require('./matches_start')
-
-
-
+var throttle = require('./throttle')
 
 function DirCrawler(dirpath){
   this.path = path.resolve(path.normalize(dirpath))
@@ -15,6 +13,7 @@ function DirCrawler(dirpath){
   this.stats = {}
   this.watchers = {}
   this.globs = {}
+  this.throttledEmit = throttle(this.emit, 200)
 }
 
 DirCrawler.prototype = {
@@ -62,7 +61,7 @@ DirCrawler.prototype = {
           self.watchDir(filepath)
         }else if (stat.isFile() && self.wantFile(filepath)){
           if (!prevStat && !self.crawling){
-            self.emit('change', filepath)
+            self.throttledEmit('change', filepath)
           }
           self.watchFile(filepath) 
           
@@ -112,7 +111,7 @@ DirCrawler.prototype = {
     Object.keys(self.stats).filter(function(fp){
       if (fp.substring(0, filepath.length) === filepath){
         if (self.wantFile(fp)){
-          self.emit('change', fp)
+          self.throttledEmit('change', fp)
         }
         self.untrack(fp)
       }
@@ -121,7 +120,7 @@ DirCrawler.prototype = {
   fireChangedIfModified: function(filepath){
     var self = this
     this.ifFileModified(filepath, function(){
-      self.emit('change', filepath)
+      self.throttledEmit('change', filepath)
     })
   },
   ifFileModified: function(filepath, callback){
