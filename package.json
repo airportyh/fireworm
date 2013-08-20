@@ -4,7 +4,7 @@
   "description": "A crawling file watcher.",
   "main": "fireworm.js",
   "scripts": {
-    "test": "mocha -u tdd *_tests.js"
+    "test": "mocha -u tdd tests/*_tests.js"
   },
   "files": [
     "lib",
