@@ -5,6 +5,9 @@ var EventEmitter = require('events').EventEmitter
 var minimatch = require('minimatch')
 var matchesStart = require('./matches_start')
 
+
+
+
 function DirCrawler(dirpath){
   this.path = path.resolve(path.normalize(dirpath))
   this.crawling = false
@@ -25,24 +28,6 @@ DirCrawler.prototype = {
       self.crawling = false
       callback(err)
     })
-  },
-  throttledStat: function(filepath, callback){
-    fs.stat(filepath, callback)
-    /*
-    return
-    // throttled wrapper for fs.stat
-    var tid
-    var self = this
-    if (tid = this.statTimers[filepath]){
-      clearTimeout(tid)
-    }
-    this.statTimers[filepath] = setTimeout(function(){
-      delete self.statTimers[filepath]  
-      fs.stat(filepath, function(err, stat){
-        callback(err, stat)
-      })
-    }, 200)
-*/
   },
   crawldir: function(filepath, callback){
     var self = this
@@ -67,24 +52,20 @@ DirCrawler.prototype = {
     fs.stat(filepath, function(err, stat){
       var prevStat = self.stats[filepath]
       if (err){
-        delete self.stats[filepath]
+        self.untrack(filepath)
         return callback(err, null, prevStat)
       }
       self.stats[filepath] = stat
       if (!self.watchers[filepath]){
 
-        if (stat.isDirectory()){
-          //console.error('watching', filepath)
-          self.watchers[filepath] = 
-            fs.watch(filepath, function(evt, filename){
-              self.onDirAccessed(evt, filename, filepath)
-            })
+        if (stat.isDirectory() && self.wantDirectory(filepath)){
+          self.watchDir(filepath)
         }else if (stat.isFile() && self.wantFile(filepath)){
-          //console.error('watching', filepath)
-          self.watchers[filepath] = 
-            fs.watch(filepath, function(evt, filename){
-              self.onFileAccessed(evt, filename, filepath)
-            })
+          if (!prevStat && !self.crawling){
+            self.emit('change', filepath)
+          }
+          self.watchFile(filepath) 
+          
         }
       }
       callback(null, stat, prevStat)
@@ -133,7 +114,7 @@ DirCrawler.prototype = {
         if (self.wantFile(fp)){
           self.emit('change', fp)
         }
-        delete self.stats[fp]
+        self.untrack(fp)
       }
     })
   },
@@ -170,6 +151,27 @@ DirCrawler.prototype = {
     return Object.keys(this.globs).some(function(glob){
       return matchesStart(dirpath, glob)
     })
+  },
+  watchFile: function(filepath){
+    //console.error('watching file', filepath)
+    var self = this
+    this.watchers[filepath] = 
+      fs.watch(filepath, function(evt, filename){
+        self.onFileAccessed(evt, filename, filepath)
+      })
+  },
+  watchDir: function(dirpath){
+    //console.error('watching dir', dirpath)
+    var self = this
+    this.watchers[dirpath] = 
+      fs.watch(dirpath, function(evt, filename){
+        self.onDirAccessed(evt, filename, dirpath)
+      })
+  },
+  untrack: function(filepath){
+    delete this.stats[filepath]
+    var watcher = this.watchers[filepath]
+    if (watcher) watcher.close() 
   },
   clear: function(){
     for (var filepath in this.watchers){

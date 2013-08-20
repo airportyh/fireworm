@@ -159,10 +159,13 @@ suite('dir crawler', function(){
         }, 200)
       })
     })
+    var yesDone = false
     c.on('change', function(filepath){
+      if (yesDone) return
       assert.equal(filepath, abs('a_dir/another_dir/hello.js'))
       if (filepath === abs('a_dir/another_dir/hello.js')){
         done()
+        yesDone = true
       }
     })
   })
@@ -187,6 +190,22 @@ suite('dir crawler', function(){
       assert.equal(filepath, abs('a_dir/another_dir/hello.js'))
       if (callCount === 2) done()
     })
+  })
+
+  test('a directory got moved to something we care about', function(done){
+    exec('mkdir a_dir/two', function(){
+      exec('touch a_dir/two/blah.txt', function(){
+        c.add('a_dir/one/*.txt')
+        c.crawl(function(){
+          exec('mv a_dir/two a_dir/one')
+          changed.on('call', function(){
+            done()
+          })
+        })
+      })
+    })
+    
+    
   })
 
 })

@@ -1,9 +1,7 @@
 var DirCrawler = require('./dircrawler')
 
 var c = new DirCrawler('./')
-c.add('*.js')
-c.add('*/*.js')
-c.add('a_dir/another_dir/*.js')
+c.add('one/*.js')
 
 c.crawl(function(){})
 
