@@ -6,6 +6,11 @@
   "scripts": {
     "test": "mocha -u tdd *_tests.js"
   },
+  "files": [
+    "lib",
+    "index.js",
+    "README.md"
+  ],
   "repository": "",
   "keywords": [
     "filewatching",
