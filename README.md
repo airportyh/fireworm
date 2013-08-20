@@ -25,6 +25,8 @@ Usage
         console.log(filename + ' just changed!')
     })
 
+    fw.crawl()
+
 Why is this different from other file watchers?
 -----------------------------------------------
 
