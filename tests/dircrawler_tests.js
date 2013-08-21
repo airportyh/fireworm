@@ -229,6 +229,9 @@ function access(filepath, callback){
 }
 
 function exec(command, callback){
+  if (process.platform === 'win32'){
+    command = command.replace(/\//, '\\')
+  }
   child_process.exec(command, function(){
     var args = arguments
     if (callback) callback.apply(null, args)
