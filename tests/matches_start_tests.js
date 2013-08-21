@@ -1,21 +1,46 @@
 var matches = require('../lib/matches_start')
-require('chai').should()
-describe('matchesBeginning', function(){
-    it('should match globs', function(){
-        matches('foo/', 'foo/*.js').should.be.ok
-        matches('foo/', 'foo/bar/*.js').should.be.ok
-        matches('foo/', 'bar/*.js').should.not.be.ok
-        matches('foo/', 'foobar/*.js').should.not.be.ok
-    })
-    it('should match regexes', function(){
-        matches('foo/', /foo\/.*\.js/).should.be.ok
-        matches('foo/', /foo\/bar\/.*\.js/).should.be.ok
-        matches('foo/', /bar\/.*\.js/).should.not.be.ok
-        matches('foo/', /foobar\/.*\.js/).should.not.be.ok
-        matches('foo/bar/', /foo\/[^\/]*\.js/).should.not.be.ok
-    })
-    it('should handle or expressions', function(){
-        matches('abc', /(abc|def)/).should.be.ok
-        matches('ghi', /(abc|def)/).should.not.be.ok
-    })
-})
+var assert = require('assert')
+
+if (process.platform !== 'win32'){
+
+  test('should match globs', function(){
+    assert(matches('foo/', 'foo/*.js'))
+    assert(matches('foo/', 'foo/bar/*.js'))
+    assert(!matches('foo/', 'bar/*.js'))
+    assert(!matches('foo/', 'foobar/*.js'))
+  })
+  test('should match regexes', function(){
+    assert(matches('foo/', /foo\/.*\.js/))
+    assert(matches('foo/', /foo\/bar\/.*\.js/))
+    assert(!matches('foo/', /bar\/.*\.js/))
+    assert(!matches('foo/', /foobar\/.*\.js/))
+    assert(!matches('foo/bar/', /foo\/[^\/]*\.js/))
+  })
+  test('should handle or expressions', function(){
+    assert(matches('abc', /(abc|def)/))
+    assert(!matches('ghi', /(abc|def)/))
+  })
+
+}
+
+if (process.platform === 'win32'){
+
+  test('should match globs', function(){
+    assert(matches('foo\\', 'foo\\*.js'))
+    assert(matches('foo\\', 'foo\\bar/*.js'))
+    assert(!matches('foo\\', 'bar\\*.js'))
+    assert(!matches('foo\\', 'foobar\\*.js'))
+  })
+  test('should match regexes', function(){
+    assert(matches('foo\\', /foo\\\\.*\.js/))
+    assert(matches('foo\\', /foo\\\\bar\\\\.*\.js/))
+    assert(!matches('foo\\', /bar\\\\.*\.js/))
+    assert(!matches('foo\\', /foobar\\\\.*\.js/))
+    assert(!matches('foo\\bar', /foo\\\\[^\/]*\.js/))
+  })
+  test('should handle or expressions', function(){
+    assert(matches('abc', /(abc|def)/))
+    assert(!matches('ghi', /(abc|def)/))
+  })
+
+}
