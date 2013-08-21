@@ -26,18 +26,7 @@ suite('baseDir', function(){
   test('?', function(){
     assertBaseDirIs('a/?/b/c.txt', 'a')
   })
-
-  test('escapes', function(){
-    assertBaseDirIs('a/\\*/b/a.txt', 'a/*/b')
-    assertBaseDirIs('a/\\?/b/a.txt', 'a/?/b')
-  })
-
-  test('character group', function(){
-    assertBaseDirIs('a/[bc]/d/a.txt', 'a')
-    assertBaseDirIs('a/\\[bc]/d/a.txt', 'a/[bc]/d')
-    assertBaseDirIs('a/[bc\\]/d/a.txt', 'a/[bc]/d')
-  })
-
+  
   function assertBaseDirIs(glob, baseDir){
     glob = new Glob(glob)
     assert.equal(
