@@ -206,6 +206,26 @@ suite('dir crawler', function(){
 
 })
 
+suite('ignoring files', function(){
+
+  var dc
+
+  setup(function(){
+    dc = new DirCrawler('a_dir')
+  })
+
+  teardown(function(){
+    dc.clear()
+  })
+
+  test('ignores a file', function(){
+    dc.add('a_dir/one.txt')
+    dc.ignore('a_dir/one.txt')
+    assert(!dc.wantFile(abs('a_dir/one.txt')))
+  })
+
+})
+
 function randomSlug(){
   return Math.floor(Math.random() * 10000000)
 }

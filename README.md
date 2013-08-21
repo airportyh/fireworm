@@ -17,8 +17,11 @@ Usage
     var fw = fireworm('start_dir')
 
     // Add the files you want to watch for changes on (can be glob)
-    fw.add('scripts/*.js')
-    fw.add('tests/*.js')
+    fw.add('lib/**/*.js')
+    fw.add('tests/**/*.js')
+
+    // ignore some patterns
+    fw.ignore('tests/dontcare/*.js')
 
     // register for the `change` event
     fw.on('change', function(filename){
