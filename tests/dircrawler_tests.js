@@ -27,7 +27,7 @@ suite('dir crawler', function(){
     c.crawl(function(){
       access('a_dir/one.txt', function(){
         assertNotCalledSoon(changed, done)
-      })    
+      })
     })
   })
 
@@ -225,7 +225,7 @@ function createFixture(callback){
 
 function access(filepath, callback){
   filepath = path.normalize(filepath)
-  exec('touch -a ' + filepath, callback)
+  fs.readFile(filepath, callback)
 }
 
 function exec(command, callback){
