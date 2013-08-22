@@ -25,10 +25,16 @@ Fireworm.prototype = {
       this.needRecrawl = true
     }
   },
+  ignore: function(){
+    for (var i = 0; i < arguments.length; i++){
+      this.dirCrawler.ignore(arguments[i])
+    }
+  },
   start: function(){
     var self = this
     function check(){
       if (self.needRecrawl){
+        self.needRecrawl = false
         self.dirCrawler.crawl()
       }
       setTimeout(check, 1000)
