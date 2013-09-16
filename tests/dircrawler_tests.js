@@ -207,13 +207,26 @@ suite('dir crawler', function(){
     touch('a_dir/two.txt', function() {
       exec('ln -s a_dir/two.txt a_dir/a_symlink', function() {
         exec('rm a_dir/two.txt', function() {
-          var crawlFinished = spy()
-          c.crawl(crawlFinished)
-          crawlFinished.on('call', done)
+          var doneCrawl = spy()
+          c.crawl(doneCrawl)
+          doneCrawl.on('call', done)
         })
       })
     })
   })
+
+  /*
+  test('symlink dir should not cause infinite loop', function(done){
+    c.add('a_dir/**\/*.txt')
+    touch('a_dir/blah.txt', function(){
+      exec('ln -s ' + abs('a_dir') + ' ' + abs('a_dir/a_dir_lk'), function(){
+        var doneCrawl = spy()
+        c.crawl(doneCrawl)
+        doneCrawl.on('call', done)
+      })
+    })
+  })
+  */
 
 })
 
