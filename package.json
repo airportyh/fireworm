@@ -1,6 +1,6 @@
 {
   "name": "fireworm",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "A crawling file watcher.",
   "main": "fireworm.js",
   "scripts": {
