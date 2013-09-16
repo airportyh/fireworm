@@ -200,8 +200,23 @@ suite('dir crawler', function(){
         })
       })
     })
-    
-    
+  })
+
+  test('crawl finishes when broken symlink present', function(done) {
+    this.timeout(3000)
+    c.add('a_dir/one.txt')
+    touch('a_dir/two.txt', function() {
+      exec('ln -s a_dir/two.txt a_dir/a_symlink', function() {
+        exec('rm a_dir/two.txt', function() {
+          var crawlFinished = spy()
+          c.crawl(crawlFinished)
+          setTimeout(function() {
+            assertCalled(crawlFinished)
+            done()
+          }, 1000)
+        })
+      })
+    })
   })
 
 })
