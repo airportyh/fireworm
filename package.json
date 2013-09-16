@@ -11,7 +11,10 @@
     "index.js",
     "README.md"
   ],
-  "repository": "",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:airportyh/fireworm.git"
+  },
   "keywords": [
     "filewatching",
     "utility"
