@@ -35,9 +35,12 @@ Fireworm.prototype = {
     function check(){
       if (self.needRecrawl){
         self.needRecrawl = false
-        self.dirCrawler.crawl()
+        self.dirCrawler.crawl(function(){
+          setTimeout(check, 1000)  
+        })
+      }else{
+        setTimeout(check, 1000)
       }
-      setTimeout(check, 1000)
     }
     check()
   },
