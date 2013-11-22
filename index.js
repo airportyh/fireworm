@@ -1,56 +1,46 @@
-var DirCrawler = require('./lib/dircrawler')
+var chokidar = require('chokidar')
 var EventEmitter = require('events').EventEmitter
+var minimatch = require('minimatch')
 
-function Fireworm(baseDir){
+function Fireworm(dir){
   if (!(this instanceof Fireworm)){
-    return new Fireworm(baseDir)
+    return new Fireworm(dir)
   }
-  this.dirCrawler = new DirCrawler(baseDir)
-  this.dirCrawler.on('change', this.onChange.bind(this))
-  this.needRecrawl = false
-  process.nextTick(function(){
-    this.start()
-  }.bind(this))
+  var onChange = this._onChange.bind(this)
+  this.patterns = []
+  this.watcher = chokidar.watch(dir, {
+    ignoreInitial: true
+  })
+  this.watcher
+    .on('add', onChange)
+    .on('change', onChange)
+    .on('unlink', onChange)
+    .on('error', this._onError.bind(this))
 }
 
 Fireworm.prototype = {
   __proto__: EventEmitter.prototype,
   add: function(){
-    var globsBefore = this.dirCrawler.getGlobs()
     for (var i = 0; i < arguments.length; i++){
-      this.dirCrawler.add(arguments[i])
-    }
-    var globsAfter = this.dirCrawler.getGlobs()
-    if (globsAfter.length > globsBefore.length){
-      this.needRecrawl = true
+      this._addOne(arguments[i])
     }
   },
-  ignore: function(){
-    for (var i = 0; i < arguments.length; i++){
-      this.dirCrawler.ignore(arguments[i])
+  _addOne: function(pattern){
+    this.patterns.push(pattern)
+  },
+  _onChange: function(filepath){
+    if (this._matches(filepath)){
+      this.emit('change', filepath)
     }
   },
-  start: function(){
-    var self = this
-    function check(){
-      if (self.needRecrawl){
-        self.needRecrawl = false
-        self.dirCrawler.crawl(function(){
-          setTimeout(check, 1000)  
-        })
-      }else{
-        setTimeout(check, 1000)
-      }
-    }
-    check()
+  _onError: function(err){
+    this.emit('error', err)
   },
-  clear: function(){
-    this.dirCrawler.clear()
-    this.needRecrawl = false
-  },
-  onChange: function(filepath){
-    this.emit('change', filepath)
-  }  
+  _matches: function(filepath){
+    return this.patterns.reduce(function(matched, pattern){
+      return matched || minimatch(filepath, pattern)
+    }, false)
+  }
 }
 
 module.exports = Fireworm
