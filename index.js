@@ -1,4 +1,4 @@
-var chokidar = require('chokidar')
+var DirCrawler = require('./lib/dircrawler')
 var EventEmitter = require('events').EventEmitter
 var minimatch = require('minimatch')
 
@@ -8,13 +8,11 @@ function Fireworm(dir){
   }
   var onChange = this._onChange.bind(this)
   this.patterns = []
-  this.watcher = chokidar.watch(dir, {
-    ignoreInitial: true
-  })
+  this.watcher = new DirCrawler(dir)
   this.watcher
     .on('add', onChange)
     .on('change', onChange)
-    .on('unlink', onChange)
+    .on('remove', onChange)
     .on('error', this._onError.bind(this))
 }
 
