@@ -24,7 +24,7 @@ Fireworm.prototype = {
     }
   },
   clear: function(){
-    this.watcher.close()
+    this.patterns = []
   },
   _addOne: function(pattern){
     this.patterns.push(pattern)
