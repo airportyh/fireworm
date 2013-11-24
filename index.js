@@ -1,6 +1,7 @@
 var DirCrawler = require('./lib/dircrawler')
 var EventEmitter = require('events').EventEmitter
 var minimatch = require('minimatch')
+var flatten = require('lodash.flatten')
 
 function Fireworm(dir){
   if (!(this instanceof Fireworm)){
@@ -8,6 +9,7 @@ function Fireworm(dir){
   }
   var onChange = this._onChange.bind(this)
   this.patterns = []
+  this.ignores = []
   this.watcher = new DirCrawler(dir)
   this.watcher
     .on('add', onChange)
@@ -19,15 +21,20 @@ function Fireworm(dir){
 Fireworm.prototype = {
   __proto__: EventEmitter.prototype,
   add: function(){
-    for (var i = 0; i < arguments.length; i++){
-      this._addOne(arguments[i])
+    var args = flatten(arguments)
+    for (var i = 0; i < args.length; i++){
+      this.patterns.push(args[i])
+    }
+  },
+  ignore: function(){
+    var args = flatten(arguments)
+    for (var i = 0; i < args.length; i++){
+      this.ignores.push(args[i])
     }
   },
   clear: function(){
     this.patterns = []
-  },
-  _addOne: function(pattern){
-    this.patterns.push(pattern)
+    this.ignores = []
   },
   _onChange: function(filepath){
     if (this._matches(filepath)){
@@ -38,9 +45,11 @@ Fireworm.prototype = {
     this.emit('error', err)
   },
   _matches: function(filepath){
-    return this.patterns.reduce(function(matched, pattern){
-      return matched || minimatch(filepath, pattern)
-    }, false)
+    return this.patterns.some(function(pattern){
+      return minimatch(filepath, pattern)
+    }) && !this.ignores.some(function(pattern){
+      return minimatch(filepath, pattern)
+    })
   }
 }
 
