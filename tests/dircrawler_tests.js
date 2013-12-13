@@ -7,7 +7,7 @@ var fs = require('fs')
 var mkdirp = require('mkdirp')
 var rimraf = require('rimraf')
 
-suite('dir crawler', function(){
+suite.skip('dir crawler', function(){
 
   var c, changed
 
@@ -230,7 +230,7 @@ suite('dir crawler', function(){
 
 })
 
-suite('ignoring files', function(){
+suite.skip('ignoring files', function(){
 
   var dc
 
