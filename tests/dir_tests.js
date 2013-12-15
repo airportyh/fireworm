@@ -133,12 +133,14 @@ suite('Dir', function(){
       var removed = false
       var added = false
       sink.on('remove', function(pth){
+        console.error('remove', pth)
         assert.equal(pth, onepath)
         removed = true
         if (added && removed) done()
       })
 
       sink.on('add', function(pth){
+        console.error('add', pth)
         assert.equal(pth, twopath)
         added = true
         if (added && removed) done()
