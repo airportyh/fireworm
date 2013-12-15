@@ -7,6 +7,7 @@ var exec = require('child_process').exec
 var path = require('path')
 var fs = require('fs')
 var rimraf = require('rimraf')
+var mkdirp = require('mkdirp')
 
 suite('Dir', function(){
 
@@ -68,16 +69,27 @@ suite('Dir', function(){
     var dir = new Dir(dirpath, sink)
     dir.update(function(){
       touch(path.join(dirpath, 'two.txt'))
-      sink.once('add', function(pth){
+      sink.on('add', function(pth){
         assert.equal(pth, path.join(dirpath, 'two.txt'))
-        fs.unlinkSync(path.join(dirpath, 'two.txt'))
+        done()
+      })
+    })
+  })
+
+  test('fires `add` when directory created', function(done){
+    var sink = new EventEmitter
+    var dir = new Dir(dirpath, sink)
+    dir.update(function(){
+      fs.mkdir(path.join(dirpath, 'a_dir'))
+      sink.on('add', function(pth){
+        assert.equal(pth, path.join(dirpath, 'a_dir'))
         done()
       })
     })
   })
 
   test('watches for modification on new files', function(done){
-    this.timeout(4000)
+    this.timeout(5000)
     var sink = new EventEmitter
     var dir = new Dir(dirpath, sink)
     var twopath = path.join(dirpath, 'two.txt')
@@ -135,7 +147,54 @@ suite('Dir', function(){
     })
   })
 
+  test('watches new subdirectory contents', function(done){
+    var sink = new EventEmitter
+    var dir = new Dir(dirpath, sink)
+    var adirpath = path.join(dirpath, 'a_dir')
+    var onepath = path.join(adirpath, 'one.txt')
+    dir.update(function(){
+      fs.mkdirSync(adirpath)
+      sink.once('add', function(pth){
+        assert.equal(pth, adirpath)
+        fs.writeFile(onepath)
+        sink.on('add', function(pth){
+          assert.equal(pth, onepath)
+          done()
+        })
+      })
+    })
+  })
+
+  test('fires `remove` for contents when subdirectory is removed', function(done){
+    var sink = new EventEmitter
+    var dir = new Dir(dirpath, sink)
+    var adirpath = path.join(dirpath, 'a_dir')
+    var onepath = path.join(adirpath, 'one.txt')
+    dir.update(function(){
+      fs.mkdirSync(adirpath)
+      sink.once('add', function(pth){
+        assert.equal(pth, adirpath)
+        fs.writeFile(onepath)
+        sink.once('add', function(pth){
+          assert.equal(pth, onepath)
+          rimraf(adirpath, function(){})
+          var adirRemoved = false
+          var oneRemoved = false
+          sink.on('remove', function(pth){
+            if (pth === onepath) oneRemoved = true
+            if (pth === adirpath) adirRemoved = true
+            if (oneRemoved && adirRemoved) done()
+          })
+        })
+      })
+    })
+  })
+
   var dirpath
+
+  before(function(){
+    mkdirp.sync(path.join('tests', 'data'))
+  })
 
   beforeEach(function(){
     dirpath = path.join('tests', 'data', String(Math.ceil(Math.random() * 1000)))
@@ -145,6 +204,10 @@ suite('Dir', function(){
 
   afterEach(function(){
     rimraf.sync(dirpath)
+  })
+
+  after(function(){
+    rimraf.sync(path.join('tests', 'data'))
   })
 
 })
