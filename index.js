@@ -11,11 +11,13 @@ function Fireworm(dir){
   this.ignores = []
   this.watcher = new DirCrawler(dir)
   var onChange = this._onChange.bind(this)
+  var onRemove = this._onRemove.bind(this)
+  var onAdd = this._onAdd.bind(this)
   var onError = this._onError.bind(this)
   this.watcher
-    .on('add', onChange)
+    .on('add', onAdd)
     .on('change', onChange)
-    .on('remove', onChange)
+    .on('remove', onRemove)
     .on('error', onError)
 }
 
@@ -36,6 +38,16 @@ Fireworm.prototype = {
   clear: function(){
     this.patterns = []
     this.ignores = []
+  },
+  _onAdd: function(filepath){
+    if (this._matches(filepath)){
+      this.emit('add', filepath)
+    }
+  },
+  _onRemove: function(filepath){
+    if (this._matches(filepath)){
+      this.emit('remove', filepath)
+    }
   },
   _onChange: function(filepath){
     if (this._matches(filepath)){
