@@ -6,7 +6,6 @@ var assert = require('insist')
 var exec = require('child_process').exec
 var path = require('path')
 var fs = require('fs')
-var rimraf = require('rimraf')
 var mkdirp = require('mkdirp')
 
 suite('Dir', function(){
@@ -99,7 +98,7 @@ suite('Dir', function(){
         assert.equal(pth, twopath)
         setTimeout(function(){
           touch(twopath)
-        }, 700)
+        }, 1000)
         sink.on('change', function(pth){
           assert.equal(pth, twopath)
           fs.unlinkSync(twopath)
@@ -177,7 +176,8 @@ suite('Dir', function(){
         fs.writeFile(onepath)
         sink.once('add', function(pth){
           assert.equal(pth, onepath)
-          rimraf(adirpath, function(){})
+          exec('rm -fr ' + adirpath)
+          //rimraf(adirpath, function(){})
           var adirRemoved = false
           var oneRemoved = false
           sink.on('remove', function(pth){
@@ -202,15 +202,17 @@ suite('Dir', function(){
     fs.writeFileSync(path.join(dirpath, 'one.txt'), '')
   })
 
-  afterEach(function(){
-    rimraf.sync(dirpath)
+  afterEach(function(done){
+    exec('rm -fr ' + dirpath, function(){ done() })
   })
 
-  after(function(){
-    rimraf.sync(path.join('tests', 'data'))
+  after(function(done){
+    exec('rm -fr ' + path.join('tests', 'data'), function(){ done() })
   })
 
 })
+
+
 
 function touch(filepath, callback){
   filepath = path.normalize(filepath)
