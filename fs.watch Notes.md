@@ -8,6 +8,7 @@ fs.watch Notes
 1. if add a new file `two.txt`, fires `rename two.txt`
 2. if rename a file `one.txt` to `three.txt`, fires `rename one.txt` and `rename three.txt`
 3. if remove a file `two.txt`, fires `rename two.txt`
+4. if touch file `one.txt`, fires change null and change `one.txt` 
 
 ### Windows 7
 

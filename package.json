@@ -33,6 +33,7 @@
     "minimatch": "~0.2.9",
     "async": "~0.2.9",
     "chokidar": "~0.7.1",
-    "lodash.flatten": "~2.3.0"
+    "lodash.flatten": "~2.3.0",
+    "lodash.debounce": "~2.4.1"
   }
 }
