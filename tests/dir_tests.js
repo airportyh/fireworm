@@ -53,7 +53,7 @@ suite('Dir', function(){
   test('doesnt fire `add` initially if dontFireInitial', function(done){
     var sink = new EventEmitter
     var dir = new Dir(dirpath, sink, {
-      dontFireInitial: true
+      ignoreInitial: true
     })
     var onAdd = spy()
     sink.on('add', onAdd)
