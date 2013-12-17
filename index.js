@@ -7,15 +7,16 @@ function Fireworm(dir){
   if (!(this instanceof Fireworm)){
     return new Fireworm(dir)
   }
-  var onChange = this._onChange.bind(this)
   this.patterns = []
   this.ignores = []
   this.watcher = new DirCrawler(dir)
+  var onChange = this._onChange.bind(this)
+  var onError = this._onError.bind(this)
   this.watcher
     .on('add', onChange)
     .on('change', onChange)
     .on('remove', onChange)
-    .on('error', this._onError.bind(this))
+    .on('error', onError)
 }
 
 Fireworm.prototype = {
