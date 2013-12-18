@@ -1,4 +1,4 @@
-var DirCrawler = require('./lib/dircrawler')
+var DirWatcher = require('./lib/dirwatcher')
 var EventEmitter = require('events').EventEmitter
 var minimatch = require('minimatch')
 var flatten = require('lodash.flatten')
@@ -13,7 +13,7 @@ function Fireworm(dir, options){
   if (!this.options.skipDirEntryPatterns){
     this.options.skipDirEntryPatterns = [/^node_modules$/, /^\./]
   }
-  this.watcher = new DirCrawler(dir, this.options)
+  this.watcher = new DirWatcher(dir, this.options)
   var onChange = this._onChange.bind(this)
   var onRemove = this._onRemove.bind(this)
   var onAdd = this._onAdd.bind(this)
