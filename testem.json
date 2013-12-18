@@ -1,7 +1,8 @@
 {
   "src_files": [
     "lib/*.js",
-    "tests/*.js"
+    "tests/*.js",
+    "index.js"
   ],
   "launchers": {
     "Mocha": {

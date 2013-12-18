@@ -1,6 +1,8 @@
 var Fireworm = require('../index')
 
-var fw = Fireworm('manual_tests/a_dir')
+var fw = Fireworm('manual_tests/a_dir', {
+  ignoreInitial: true
+})
 
 fw.add('manual_tests/a_dir/*.js')
 fw.add('manual_tests/a_dir/another_dir/*.js')

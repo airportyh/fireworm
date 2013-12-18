@@ -1,32 +1,45 @@
-var DirWatcher = require('./lib/dirwatcher')
 var EventEmitter = require('events').EventEmitter
 var minimatch = require('minimatch')
 var flatten = require('lodash.flatten')
+var Dir = require('./lib/dir')
 
-function Fireworm(dir, options){
+function Fireworm(dirpath, options){
+  
   if (!(this instanceof Fireworm)){
-    return new Fireworm(dir, options)
+    return new Fireworm(dirpath, options)
   }
+
+  options = options || {}
+  
   this.patterns = []
   this.ignores = []
-  this.options = options || {}
-  if (!this.options.skipDirEntryPatterns){
-    this.options.skipDirEntryPatterns = [/^node_modules$/, /^\./]
+
+  if (options.ignoreInitial){
+    this.suppressEvents = true
   }
-  this.watcher = new DirWatcher(dir, this.options)
-  var onChange = this._onChange.bind(this)
-  var onRemove = this._onRemove.bind(this)
-  var onAdd = this._onAdd.bind(this)
-  var onError = this._onError.bind(this)
-  this.watcher
-    .on('add', onAdd)
-    .on('change', onChange)
-    .on('remove', onRemove)
-    .on('error', onError)
+
+  var sink = new EventEmitter
+
+  this.dir = new this.Dir(dirpath, sink, {
+    skipDirEntryPatterns: 
+    options.skipDirEntryPatterns || [/^node_modules$/, /^\./]
+  })
+
+  sink
+    .on('add', this._onAdd.bind(this))
+    .on('change', this._onChange.bind(this))
+    .on('remove', this._onRemove.bind(this))
+    .on('error', this._onError.bind(this))
+
+  this.dir.update(function(){
+    this.suppressEvents = false
+  }.bind(this))
+  
 }
 
 Fireworm.prototype = {
   __proto__: EventEmitter.prototype,
+  Dir: Dir, // to allow injection in tests
   add: function(){
     var args = flatten(arguments)
     for (var i = 0; i < args.length; i++){
@@ -44,16 +57,19 @@ Fireworm.prototype = {
     this.ignores = []
   },
   _onAdd: function(filepath){
+    if (this.suppressEvents) return
     if (this._matches(filepath)){
       this.emit('add', filepath)
     }
   },
   _onRemove: function(filepath){
+    if (this.suppressEvents) return
     if (this._matches(filepath)){
       this.emit('remove', filepath)
     }
   },
   _onChange: function(filepath){
+    if (this.suppressEvents) return
     if (this._matches(filepath)){
       this.emit('change', filepath)
     }

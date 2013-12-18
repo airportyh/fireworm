@@ -43,22 +43,9 @@ suite('Dir', function(){
   test('fires `add` initially for each file', function(done){
     var sink = new EventEmitter
     var dir = new Dir(dirpath, sink)
-    dir.update(true)
+    dir.update()
     sink.on('add', function(pth){
       assert.equal(pth, path.join(dirpath, 'one.txt'))
-      done()
-    })
-  })
-
-  test('doesnt fire `add` initially if ignoreInitial', function(done){
-    var sink = new EventEmitter
-    var dir = new Dir(dirpath, sink, true, {
-      ignoreInitial: true
-    })
-    var onAdd = spy()
-    sink.on('add', onAdd)
-    dir.update(true, function(){
-      assert(!onAdd.called, 'shouldnt have called')
       done()
     })
   })
