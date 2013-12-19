@@ -57,9 +57,9 @@ Options:
 
 File watcher objects are [EventEmitters](http://nodejs.org/api/events.html#events_class_events_eventemitter), and can emit these events:
 
-* `add` - fired when a matching file has been added to the FS. Param: `path` - the path to the file
-* `change` - fired when a matching file has been modified. Param: `path` - the path to the file
-* `remove` - fired when a matching file has been removed from the FS. Param: `path` - the path to the file
+* `add` - fired when a matching file has been added to the FS. Parameter: `path` - the path to the file
+* `change` - fired when a matching file has been modified. Parameter: `path` - the path to the file
+* `remove` - fired when a matching file has been removed from the FS. Parameter: `path` - the path to the file
 
 ## License
 
