@@ -9,7 +9,7 @@ Fireworm is a crawling file watcher.
 
 ## Usage
 
-```
+``` js
 var fireworm = require('fireworm')
 
 // make a new file watcher
