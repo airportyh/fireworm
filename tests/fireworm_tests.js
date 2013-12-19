@@ -13,7 +13,7 @@ suite('fireworm', function(){
   test('default skipDirEntryPatterns', function(){
     var fw = Fireworm('a_dir')
     assert.deepEqual(fw.dir.options.skipDirEntryPatterns,
-      [/^node_modules$/, /^\./])
+      ['node_modules', '.*'])
   })
 
   ;['add', 'change', 'remove'].forEach(function(evt){

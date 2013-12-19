@@ -4,7 +4,7 @@ var flatten = require('lodash.flatten')
 var Dir = require('./lib/dir')
 
 function Fireworm(dirpath, options){
-  
+
   if (!(this instanceof Fireworm)){
     return new Fireworm(dirpath, options)
   }
@@ -22,7 +22,7 @@ function Fireworm(dirpath, options){
 
   this.dir = new this.Dir(dirpath, sink, {
     skipDirEntryPatterns: 
-    options.skipDirEntryPatterns || [/^node_modules$/, /^\./]
+    options.skipDirEntryPatterns || ['node_modules', '.*']
   })
 
   sink
