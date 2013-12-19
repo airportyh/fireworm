@@ -1,6 +1,8 @@
 Fireworm
 ========
 
+<img src="https://api.travis-ci.org/airportyh/fireworm.png">
+
 Fireworm is a crawling file watcher.
 
 ## Install
