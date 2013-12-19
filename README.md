@@ -51,7 +51,7 @@ Options:
 
 * `add(filepath:string|array)` - add these file patterns (glob) to the watch list. The parameter(s) can be a variable number of strings or arrays of strings.
 * `ignore(filepath:string|array)` - add these file patterns (glob) to the ignore list. The parameter(s) can be a variable number of strings or arrays of strings.
-* `clear` - clear all previously added match patterns or ignore patterns.
+* `clear()` - clear all previously added match patterns or ignore patterns.
 
 ### Events
 
