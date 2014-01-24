@@ -11,10 +11,13 @@ suite('fireworm', function(){
     var fw = Fireworm('a_dir')
   })
 
-  test('default skipDirEntryPatterns', function(){
+  test('wantDir', function(){
     var fw = Fireworm('a_dir')
-    assert(!fw.wantDir('a_dir/node_module'))
-    assert(!fw.wantDir('a_dir/.git'))
+    fw.add('a_dir/*.txt')
+    assert(!fw.wantDir('a_dir/node_module/blah.txt'))
+    assert(!fw.wantDir('a_dir/.git/blah.txt'))
+    assert(fw.wantDir('a_dir/blah.txt'))
+    //assert(fw.wantDir('a_dir/blah.js'))
   })
 
   ;['add', 'change', 'remove'].forEach(function(evt){
