@@ -14,10 +14,12 @@ suite('fireworm', function(){
   test('wantDir', function(){
     var fw = Fireworm('a_dir')
     fw.add('a_dir/*.txt')
-    assert(!fw.wantDir('a_dir/node_module/blah.txt'))
-    assert(!fw.wantDir('a_dir/.git/blah.txt'))
-    assert(fw.wantDir('a_dir/blah.txt'))
-    //assert(fw.wantDir('a_dir/blah.js'))
+    fw.add('a_dir/foo/*.txt')
+    assert(!fw.wantDir('a_dir/node_module')) // node_module is skipped by default
+    assert(!fw.wantDir('a_dir/.git'))        // .git is skipped by default
+    assert(fw.wantDir('a_dir'))
+    assert(fw.wantDir('a_dir/foo'))
+    assert(!fw.wantDir('a_dir/bar'))
   })
 
   ;['add', 'change', 'remove'].forEach(function(evt){
