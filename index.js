@@ -2,13 +2,15 @@ var EventEmitter = require('events').EventEmitter
 var minimatch = require('minimatch')
 var flatten = require('lodash.flatten')
 var Dir = require('./lib/dir')
+var matchesBeginning = require('./lib/matches_beginning')
+var path = require('path')
 
 function Fireworm(dirpath, options){
   if (!(this instanceof Fireworm)){
     return new Fireworm(dirpath, options)
   }
 
-  options = options || {}
+  this.options = options = options || {}
   
   this.patterns = []
   this.ignores = []
@@ -17,12 +19,12 @@ function Fireworm(dirpath, options){
     this.suppressEvents = true
   }
   
-  var skipDirEntryPatterns = options.skipDirEntryPatterns || 
+  options.skipDirEntryPatterns = options.skipDirEntryPatterns || 
     ['node_modules', '.*']
   
   var sink = new EventEmitter
 
-  this.dir = new this.Dir(dirpath, sink, skipDirEntryPatterns)
+  this.dir = new this.Dir(dirpath, sink, this.wantDir.bind(this))
 
   sink
     .on('add', this._onAdd.bind(this))
@@ -39,6 +41,16 @@ function Fireworm(dirpath, options){
 Fireworm.prototype = {
   __proto__: EventEmitter.prototype,
   Dir: Dir, // to allow injection in tests
+  wantDir: function(dirpath){
+    var entryName = path.basename(dirpath)
+    var skip = this.options.skipDirEntryPatterns.some(function(pattern){
+      return minimatch(entryName, pattern)
+    })
+    if (skip) return false
+    return this.patterns.some(function(pattern){
+      return matchesBeginning(dirpath, pattern)
+    })
+  },
   add: function(){
     var args = flatten(arguments)
     for (var i = 0; i < args.length; i++){

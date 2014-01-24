@@ -3,6 +3,7 @@ var Dir = require('../lib/dir')
 var bd = require('bodydouble')
 var spy = require('ispy')
 var assert = require('insist')
+var is = require('is-type')
 
 suite('fireworm', function(){
 
@@ -12,8 +13,8 @@ suite('fireworm', function(){
 
   test('default skipDirEntryPatterns', function(){
     var fw = Fireworm('a_dir')
-    assert.deepEqual(fw.dir.skipDirEntryPatterns,
-      ['node_modules', '.*'])
+    assert(!fw.wantDir('a_dir/node_module'))
+    assert(!fw.wantDir('a_dir/.git'))
   })
 
   ;['add', 'change', 'remove'].forEach(function(evt){
@@ -79,10 +80,14 @@ suite('fireworm', function(){
     Fireworm.prototype.Dir = FakeDir
   })
 
-  function FakeDir(dirpath, sink, skipDirEntryPatterns){
+  function FakeDir(dirpath, sink, wantDir){
+    assert(is.string(dirpath))
+    assert(sink)
+    assert(is.function(sink.emit))
+    assert(wantDir == null || is.function(wantDir))
     this.dirpath = dirpath
     this.sink = sink
-    this.skipDirEntryPatterns = skipDirEntryPatterns
+    this.wantDir = wantDir
   }
 
   FakeDir.prototype = {
