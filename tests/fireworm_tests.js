@@ -98,7 +98,8 @@ suite('fireworm', function(){
   FakeDir.prototype = {
     update: function(cb){
       this.updateCallback = cb
-    }
+    },
+    forceUpdate: function(){}
   }
 
 })

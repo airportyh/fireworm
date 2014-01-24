@@ -56,6 +56,7 @@ Fireworm.prototype = {
     for (var i = 0; i < args.length; i++){
       this.patterns.push(args[i])
     }
+    this.dir.forceUpdate()
   },
   ignore: function(){
     var args = flatten(arguments)
