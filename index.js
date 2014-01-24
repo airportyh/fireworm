@@ -4,7 +4,6 @@ var flatten = require('lodash.flatten')
 var Dir = require('./lib/dir')
 
 function Fireworm(dirpath, options){
-
   if (!(this instanceof Fireworm)){
     return new Fireworm(dirpath, options)
   }
@@ -17,13 +16,13 @@ function Fireworm(dirpath, options){
   if (options.ignoreInitial){
     this.suppressEvents = true
   }
-
+  
+  var skipDirEntryPatterns = options.skipDirEntryPatterns || 
+    ['node_modules', '.*']
+  
   var sink = new EventEmitter
 
-  this.dir = new this.Dir(dirpath, sink, {
-    skipDirEntryPatterns: 
-    options.skipDirEntryPatterns || ['node_modules', '.*']
-  })
+  this.dir = new this.Dir(dirpath, sink, skipDirEntryPatterns)
 
   sink
     .on('add', this._onAdd.bind(this))
@@ -83,6 +82,9 @@ Fireworm.prototype = {
     }) && !this.ignores.some(function(pattern){
       return minimatch(filepath, pattern)
     })
+  },
+  numWatchers: function(){
+    return this.dir.numWatchers()
   }
 }
 

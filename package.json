@@ -32,6 +32,7 @@
     "minimatch": "~0.2.9",
     "async": "~0.2.9",
     "lodash.flatten": "~2.3.0",
-    "lodash.debounce": "~2.4.1"
+    "lodash.debounce": "~2.4.1",
+    "is-type": "0.0.1"
   }
 }

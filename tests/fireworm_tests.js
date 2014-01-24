@@ -12,7 +12,7 @@ suite('fireworm', function(){
 
   test('default skipDirEntryPatterns', function(){
     var fw = Fireworm('a_dir')
-    assert.deepEqual(fw.dir.options.skipDirEntryPatterns,
+    assert.deepEqual(fw.dir.skipDirEntryPatterns,
       ['node_modules', '.*'])
   })
 
@@ -79,10 +79,10 @@ suite('fireworm', function(){
     Fireworm.prototype.Dir = FakeDir
   })
 
-  function FakeDir(dirpath, sink, options){
+  function FakeDir(dirpath, sink, skipDirEntryPatterns){
     this.dirpath = dirpath
     this.sink = sink
-    this.options = options
+    this.skipDirEntryPatterns = skipDirEntryPatterns
   }
 
   FakeDir.prototype = {
