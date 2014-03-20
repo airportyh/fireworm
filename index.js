@@ -54,14 +54,14 @@ Fireworm.prototype = {
   add: function(){
     var args = flatten(arguments)
     for (var i = 0; i < args.length; i++){
-      this.patterns.push(args[i])
+      this.patterns.push(path.normalize(args[i]))
     }
     this.dir.forceUpdate()
   },
   ignore: function(){
     var args = flatten(arguments)
     for (var i = 0; i < args.length; i++){
-      this.ignores.push(args[i])
+      this.ignores.push(path.normalize(args[i]))
     }
   },
   clear: function(){
