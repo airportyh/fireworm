@@ -12,8 +12,8 @@ function Fireworm(dirpath, options){
 
   this.options = options = options || {}
   
-  this.patterns = []
-  this.ignores = []
+  this.patterns = {}
+  this.ignores = {}
 
   if (options.ignoreInitial){
     this.suppressEvents = true
@@ -47,26 +47,36 @@ Fireworm.prototype = {
       return minimatch(entryName, pattern)
     })
     if (skip) return false
-    return this.patterns.some(function(pattern){
+    return Object.keys(this.patterns).some(function(pattern){
       return matchesBeginning(dirpath, pattern)
     })
   },
   add: function(){
     var args = flatten(arguments)
+    var hadNew = false
     for (var i = 0; i < args.length; i++){
-      this.patterns.push(path.normalize(args[i]))
+      var pattern = path.normalize(args[i])
+      if (!this.patterns[pattern]){
+        this.patterns[pattern] = true
+        hadNew = true
+      }
     }
-    this.dir.forceUpdate()
+    if (hadNew){
+      this.dir.forceUpdate()
+    }
   },
   ignore: function(){
     var args = flatten(arguments)
     for (var i = 0; i < args.length; i++){
-      this.ignores.push(path.normalize(args[i]))
+      var pattern = path.normalize(args[i])
+      if (!this.ignores[pattern]){
+        this.ignores[pattern] = true
+      }
     }
   },
   clear: function(){
-    this.patterns = []
-    this.ignores = []
+    this.patterns = {}
+    this.ignores = {}
   },
   _onAdd: function(filepath){
     if (this.suppressEvents) return
@@ -90,9 +100,9 @@ Fireworm.prototype = {
     this.emit('error', err)
   },
   _matches: function(filepath){
-    return this.patterns.some(function(pattern){
+    return Object.keys(this.patterns).some(function(pattern){
       return minimatch(filepath, pattern)
-    }) && !this.ignores.some(function(pattern){
+    }) && !Object.keys(this.ignores).some(function(pattern){
       return minimatch(filepath, pattern)
     })
   },

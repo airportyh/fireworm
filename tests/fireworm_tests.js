@@ -69,16 +69,16 @@ suite('fireworm', function(){
   test('add and clear', function(){
     var fw = Fireworm('a_dir')
     fw.add('*')
-    assert.deepEqual(fw.patterns, ['*'])
+    assert.deepEqual(Object.keys(fw.patterns), ['*'])
     fw.add('foo')
-    assert.deepEqual(fw.patterns, ['*', 'foo'])
+    assert.deepEqual(Object.keys(fw.patterns), ['*', 'foo'])
     fw.add(['bar'])
-    assert.deepEqual(fw.patterns, ['*', 'foo', 'bar'])
+    assert.deepEqual(Object.keys(fw.patterns), ['*', 'foo', 'bar'])
     fw.ignore('foo')
-    assert.deepEqual(fw.ignores, ['foo'])
+    assert.deepEqual(Object.keys(fw.ignores), ['foo'])
     fw.clear()
-    assert.deepEqual(fw.patterns, [])
-    assert.deepEqual(fw.ignores, [])
+    assert.deepEqual(Object.keys(fw.patterns), [])
+    assert.deepEqual(Object.keys(fw.ignores), [])
   })
 
   before(function(){
