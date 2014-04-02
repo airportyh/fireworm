@@ -1,6 +1,6 @@
 var EventEmitter = require('events').EventEmitter
 var minimatch = require('minimatch')
-var flatten = require('lodash.flatten')
+var flatten = require('lodash').flatten
 var Dir = require('./lib/dir')
 var matchesBeginning = require('./lib/matches_beginning')
 var path = require('path')
