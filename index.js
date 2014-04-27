@@ -20,7 +20,7 @@ function Fireworm(dirpath, options){
   }
   
   options.skipDirEntryPatterns = options.skipDirEntryPatterns || 
-    ['node_modules', '.*']
+    ['node_modules', 'bower_components', '.*']
   
   var sink = new EventEmitter
 
