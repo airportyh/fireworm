@@ -16,6 +16,7 @@ suite('fireworm', function(){
     fw.add('a_dir/*.txt')
     fw.add('a_dir/foo/*.txt')
     assert(!fw.wantDir('a_dir/node_module')) // node_module is skipped by default
+    assert(!fw.wantDir('a_dir/bower_components')) // bower_components is skipped by default
     assert(!fw.wantDir('a_dir/.git'))        // .git is skipped by default
     assert(fw.wantDir('a_dir'))
     assert(fw.wantDir('a_dir/foo'))
