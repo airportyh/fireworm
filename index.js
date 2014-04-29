@@ -32,7 +32,7 @@ function Fireworm(dirpath, options){
     .on('remove', this._onRemove.bind(this))
     .on('error', this._onError.bind(this))
 
-  this.dir.forceUpdate(function(){
+  this.dir.update(function(){
     this.suppressEvents = false
   }.bind(this))
   

@@ -62,7 +62,7 @@ suite('fireworm', function(){
     fw.on('add', onAdd)
     fw.dir.sink.emit('add', 'foo')
     assert(!onAdd.called)
-    fw.dir.forceUpdateCallbacks.forEach(function(f){ f() })
+    fw.dir.updateCallback()
     fw.dir.sink.emit('add', 'foo')
     assert(onAdd.called)
   })
@@ -94,19 +94,13 @@ suite('fireworm', function(){
     this.dirpath = dirpath
     this.sink = sink
     this.wantDir = wantDir
-    this.forceUpdateCallbacks = []
   }
 
   FakeDir.prototype = {
     update: function(cb){
-      throw new Error
       this.updateCallback = cb
     },
-    forceUpdate: function(cb){
-      if (cb){
-        this.forceUpdateCallbacks.push(cb)
-      }
-    }
+    forceUpdate: function(){}
   }
 
 })
