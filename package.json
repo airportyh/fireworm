@@ -22,11 +22,11 @@
   "author": "Toby Ho",
   "license": "MIT",
   "devDependencies": {
-    "mocha": "~1.12.0",
-    "mkdirp": "~0.3.5",
-    "ispy": "~0.1.2",
     "bodydouble": "~0.1.2",
-    "insist": "~0.1.0"
+    "insist": "~0.1.0",
+    "ispy": "~0.1.2",
+    "mkdirp": "~0.3.5",
+    "mocha": "^2.3.4"
   },
   "dependencies": {
     "async": "~0.2.9",
