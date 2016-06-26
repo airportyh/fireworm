@@ -33,6 +33,6 @@
     "is-type": "0.0.1",
     "lodash.debounce": "^3.1.1",
     "lodash.flatten": "^3.0.2",
-    "minimatch": "~0.2.9"
+    "minimatch": "^3.0.2"
   }
 }
