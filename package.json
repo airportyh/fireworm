@@ -2,7 +2,7 @@
   "name": "fireworm",
   "version": "0.7.1",
   "description": "A crawling file watcher.",
-  "main": "fireworm.js",
+  "main": "index.js",
   "scripts": {
     "test": "mocha -u tdd tests/*_tests.js"
   },
